@@ -81,6 +81,9 @@ const TextAlignWithClass = TextAlign.extend({
   }
 })
 
+/**
+ * Toolbar menu for the Rich Editor providing formatting options.
+ */
 const MenuBar = ({ editor }: { editor: Editor | null }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const pickImage = useCallback(() => {
@@ -295,6 +298,10 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+/**
+ * Component for rendering an image that can be resized by the user.
+ * Supports dragging for resizing along x, y, or both axes.
+ */
 const ResizableImageComponent = (props: any) => {
   const { node, updateAttributes, selected, deleteNode } = props
   const boxRef = useRef<HTMLDivElement | null>(null)
@@ -455,6 +462,10 @@ const ResizableImage = Image.extend({
   },
 })
 
+/**
+ * Main Rich Text Editor component built on Tiptap.
+ * Features image-to-text, resizing, and markdown formatting.
+ */
 export default function RichEditor({
   content,
   onChange,
