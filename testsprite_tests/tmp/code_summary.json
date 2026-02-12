@@ -1,0 +1,67 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "React",
+    "Next.js (App Router)",
+    "Tailwind CSS",
+    "TipTap",
+    "Node.js",
+    "Puppeteer",
+    "Mammoth",
+    "Spotify Web Playback SDK",
+    "Python (Streamlit)",
+    "SQLite"
+  ],
+  "features": [
+    {
+      "name": "Writer Page and Integrity Signals",
+      "description": "Main editor page with title/subtitle, WPM tracking, paste detection, focus mode, and export actions.",
+      "files": [
+        "frontend/app/editor/page.tsx"
+      ]
+    },
+    {
+      "name": "Rich Text Editor",
+      "description": "TipTap-based editor with formatting tools, headings, lists, images, alignment, and test automation hooks for paste/image/content injection.",
+      "files": [
+        "frontend/components/editor/RichEditor.tsx"
+      ]
+    },
+    {
+      "name": "DOCX and PDF Export Flow",
+      "description": "Client-side DOCX generation and server-side DOCX-to-PDF conversion.",
+      "files": [
+        "frontend/app/editor/page.tsx",
+        "frontend/app/api/convert-docx-to-pdf/route.ts"
+      ]
+    },
+    {
+      "name": "Spotify Playback Integration",
+      "description": "Spotify OAuth, Web Playback SDK controls, playlists and track handling.",
+      "files": [
+        "frontend/components/ui/spotify-card.tsx",
+        "frontend/app/spotify/callback/page.tsx",
+        "frontend/app/api/spotify/token/route.ts"
+      ]
+    },
+    {
+      "name": "Landing and Login",
+      "description": "Public landing and login flow that routes users to the editor.",
+      "files": [
+        "frontend/app/page.tsx",
+        "frontend/app/login/page.tsx"
+      ]
+    },
+    {
+      "name": "Streamlit Prototype Backend",
+      "description": "Prototype auth, editor, dashboard, and database flows.",
+      "files": [
+        "backend/app.py",
+        "backend/modules/auth.py",
+        "backend/modules/editor.py",
+        "backend/modules/dashboard.py",
+        "backend/modules/database.py"
+      ]
+    }
+  ]
+}

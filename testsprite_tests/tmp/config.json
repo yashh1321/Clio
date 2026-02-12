@@ -1,0 +1,17 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3000",
+  "executionArgs": {
+    "projectName": "clio",
+    "projectPath": "c:\\mini project\\clio",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-ummETfcLkLEHusDZbQHltYHV6YjxCcplE_LskKdrlIZ_dEK2A0ITxRJPnjSmY3JsrmPWWvcfn_ApQEvt54EJyeELyHFKLjXW2w9RX6INbuDtyMMZbdE_76TIJeRf0mCfNPY"
+    }
+  },
+  "serverPort": 52778,
+  "proxy": "http://2f65098f-a7ca-4e20-af02-8a4e116519ec:G2AVrowNIPL91OTvCnNnNtYigSn03IRu@tun.testsprite.com:8080"
+}

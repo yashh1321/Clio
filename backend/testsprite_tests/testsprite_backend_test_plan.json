@@ -1,0 +1,27 @@
+[
+  {
+    "id": "TC001",
+    "title": "submit_essay_with_valid_data",
+    "description": "Test the /submit endpoint by submitting an essay with all required fields including student_id, assignment_title, content, wpm, and paste_count. Verify that the response returns a success message and a score indicating the essay was accepted."
+  },
+  {
+    "id": "TC002",
+    "title": "submit_essay_with_invalid_wpm",
+    "description": "Test the /submit endpoint by submitting an essay with an invalid or anomalous wpm value. Verify that the API rejects the submission or returns an appropriate error message indicating invalid typing speed."
+  },
+  {
+    "id": "TC003",
+    "title": "submit_essay_with_invalid_paste_count",
+    "description": "Test the /submit endpoint by submitting an essay with an invalid or anomalous paste_count value. Verify that the API rejects the submission or returns an appropriate error message indicating invalid paste event count."
+  },
+  {
+    "id": "TC004",
+    "title": "submit_essay_missing_required_fields",
+    "description": "Test the /submit endpoint by submitting an essay request missing one or more required fields such as student_id, assignment_title, content, wpm, or paste_count. Verify that the API returns validation errors for missing fields."
+  },
+  {
+    "id": "TC005",
+    "title": "get_submissions_returns_all_submissions",
+    "description": "Test the /submissions endpoint by making a GET request to retrieve all stored essay submissions. Verify that the response returns an array of submissions with correct data structure and content for instructor review."
+  }
+]

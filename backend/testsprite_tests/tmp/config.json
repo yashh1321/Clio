@@ -1,0 +1,18 @@
+{
+  "status": "commited",
+  "type": "backend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:8000",
+  "backendAuthType": "public",
+  "executionArgs": {
+    "projectName": "clio",
+    "projectPath": "c:/mini project/clio/backend",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-r4PSO1O0h_TJkFDSzniXfn9mEKfc4fhA7CM7B14a92gWpxUIm8NZoZZaqcA7ckHsodhZyCoRkvhwHQBEbzuq1UmihZjImRttSpv1Vr2HmFUAOJgGsPocDQ26v88LSiRxTbs"
+    }
+  },
+  "serverPort": 54911,
+  "proxy": "http://f3925fa9-2cf8-4279-8fa3-6c0538acb1dd:moK6jb9ufkVNFR7Y01YMmuFe5MPZUPB6@tun.testsprite.com:8080"
+}

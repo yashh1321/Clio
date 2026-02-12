@@ -1,0 +1,441 @@
+[
+  {
+    "id": "TC001",
+    "title": "Rich Text Editor - Basic Formatting",
+    "description": "Verify that users can apply and remove basic text formatting options including bold, italic, underline, and strikethrough in the rich-text editor.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the rich-text editor page."
+      },
+      {
+        "type": "action",
+        "description": "Type sample text into the editor."
+      },
+      {
+        "type": "action",
+        "description": "Apply bold formatting to a portion of the text."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that the selected text appears bold."
+      },
+      {
+        "type": "action",
+        "description": "Apply italic formatting to a portion of the text."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that the selected text appears italicized."
+      },
+      {
+        "type": "action",
+        "description": "Apply underline formatting to a portion of the text."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that the selected text is underlined."
+      },
+      {
+        "type": "action",
+        "description": "Apply strikethrough formatting to a portion of the text."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that the selected text has strikethrough applied."
+      },
+      {
+        "type": "action",
+        "description": "Remove each formatting from the text."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the text formatting is removed accordingly."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Rich Text Editor - Headings and Lists",
+    "description": "Ensure users can insert headings (H1-H6) and both ordered and unordered lists, and that these elements are rendered correctly in the editor.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the rich-text editor page."
+      },
+      {
+        "type": "action",
+        "description": "Insert headings from H1 to H6 and enter sample text for each."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm each heading is rendered with appropriate size and style."
+      },
+      {
+        "type": "action",
+        "description": "Insert an ordered list with at least 3 items."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the ordered list displays numeric markers correctly."
+      },
+      {
+        "type": "action",
+        "description": "Insert an unordered list with at least 3 items."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the unordered list displays bullet points correctly."
+      },
+      {
+        "type": "action",
+        "description": "Test changing list indentations and levels."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that nested lists render and behave correctly."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Rich Text Editor - Text Alignment",
+    "description": "Validate that text alignment options (left, center, right, justify) can be applied and are visually reflected within the editor.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the rich-text editor page and enter multiple paragraphs."
+      },
+      {
+        "type": "action",
+        "description": "Apply left alignment to first paragraph."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the first paragraph is left aligned."
+      },
+      {
+        "type": "action",
+        "description": "Apply center alignment to second paragraph."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the second paragraph is center aligned."
+      },
+      {
+        "type": "action",
+        "description": "Apply right alignment to third paragraph."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the third paragraph is right aligned."
+      },
+      {
+        "type": "action",
+        "description": "Apply justify alignment to fourth paragraph."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the fourth paragraph is justified."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Rich Text Editor - Inline Image Insertion",
+    "description": "Verify that users can insert inline images into the editor, images are displayed correctly, and remain editable within the document.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the editor and place cursor at desired location."
+      },
+      {
+        "type": "action",
+        "description": "Insert an inline image via the editor toolbar."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the image appears inline at the cursor location."
+      },
+      {
+        "type": "action",
+        "description": "Insert multiple images with varying sizes."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify all images are displayed properly and resizable if supported."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to delete and reposition inserted images."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure images can be removed or moved within the document."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Integrity Status Indicator - Typing Speed Tracking",
+    "description": "Confirm that the system accurately tracks and displays real-time typing speed (words per minute) and updates the indicator color-coded feedback accordingly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the editor and begin typing at a slow pace."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the WPM value updates and the integrity status color reflects low speed (likely green or yellow)."
+      },
+      {
+        "type": "action",
+        "description": "Increase typing speed to a moderate level."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the WPM counter updates to the new speed and status color changes appropriately."
+      },
+      {
+        "type": "action",
+        "description": "Type rapidly above the typical threshold."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that the status indicator shows red or alert color indicating unusual speed."
+      },
+      {
+        "type": "action",
+        "description": "Pause typing and resume."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure typing speed metric resets or reflects current pace accurately."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Integrity Status Indicator - Paste Event Detection",
+    "description": "Verify that paste events within the editor are detected in real-time and trigger the integrity status indicator changes with correct color coding.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the editor and paste a block of text from clipboard."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the paste detection event is triggered immediately."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that the integrity status indicator changes color (e.g., to red) to reflect paste detection."
+      },
+      {
+        "type": "action",
+        "description": "After paste, continue typing normally."
+      },
+      {
+        "type": "assertion",
+        "description": "Check if the indicator reverts or updates according to typing speed and paste event timing."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to paste multiple times in quick succession."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure all paste events are detected and indicated."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "DOCX Export - Formatting and Image Preservation",
+    "description": "Validate that client-side DOCX export correctly preserves all text formatting, headings, lists, text alignment, and embedded inline images as per the document in the editor.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Create a document in the editor with various formatting: headings H1-H3, ordered and unordered lists, bold, italic, underline, strikethrough, text alignment, and embedded images."
+      },
+      {
+        "type": "action",
+        "description": "Initiate DOCX export client-side."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the exported DOCX file downloads successfully."
+      },
+      {
+        "type": "action",
+        "description": "Open the DOCX file in standard word processing software."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that all formatting matches the editor content exactly."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that all images appear inline and with correct positioning and sizing."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that lists and nested lists are rendered properly without formatting loss."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "PDF Export - Print-Quality Fidelity",
+    "description": "Ensure server-side PDF export returns a print-quality PDF that closely matches the original DOCX content with all formatting, images, and styling preserved.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Create a document with complex formatting and images in the editor."
+      },
+      {
+        "type": "action",
+        "description": "Export the document as DOCX."
+      },
+      {
+        "type": "action",
+        "description": "Initiate server-side PDF export by uploading DOCX to the API."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify PDF export completes within 5 seconds for typical document size."
+      },
+      {
+        "type": "action",
+        "description": "Download and open the generated PDF file."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that PDF content matches DOCX content in text, formatting, headings, lists, alignment, and images."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm print-quality output and consistent styling across sample devices and PDF viewers."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Privacy Compliance - Behavioral Data Collection",
+    "description": "Verify that only aggregate behavioral metadata such as typing speed and paste event counts are collected locally and no sensitive clipboard or content data is transmitted or stored externally.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the editor and write, copy, and paste content multiple times."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no clipboard content or textual data is sent in any network requests or stored remotely."
+      },
+      {
+        "type": "action",
+        "description": "Monitor local storage and memory usage for behavioral metadata only."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that only anonymized, aggregate behavioral signals like WPM and paste counts are stored temporarily on the client."
+      },
+      {
+        "type": "action",
+        "description": "Simulate offline mode and verify editor behavioral tracking continues without network activity."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure no data leakage occurs to external servers."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Distraction-Free UI - Responsiveness and Focus Mode",
+    "description": "Validate that the writing interface offers a minimal and distraction-free UI optimized for focus and works responsively across desktop and tablet devices.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the editor on desktop browser."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm minimal UI controls are visible and the editor area occupies most screen space."
+      },
+      {
+        "type": "action",
+        "description": "Activate the focus/exam mode."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that non-essential UI elements are hidden and only writing controls and status indicators remain."
+      },
+      {
+        "type": "action",
+        "description": "Resize or open editor on tablet device or emulated viewport."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure UI elements adapt correctly and editor remains usable with no layout breaks."
+      },
+      {
+        "type": "action",
+        "description": "Verify toolbar and integrity status chip is visible and unobtrusive on all device sizes."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "System Performance - Editor Responsiveness Under Load",
+    "description": "Test editor input responsiveness and export operation speed under typical and large document sizes to ensure performance criteria are met.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the editor and input a document with 1000+ words and multiple images."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify typing latency remains minimal and UI updates appear instantly."
+      },
+      {
+        "type": "action",
+        "description": "Export the document to DOCX format."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm export finishes within 5 seconds."
+      },
+      {
+        "type": "action",
+        "description": "Export the document to PDF format."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm PDF export process completes within 5 seconds."
+      }
+    ]
+  }
+]

@@ -1,0 +1,66 @@
+CLIO — Summary
+
+Overview
+- Clio is a web-based writing environment designed for academic integrity. It combines a modern rich-text editor with lightweight behavioral signals (typing speed, paste detection) and a high-fidelity export pipeline (DOCX and PDF) to help students write and submit essays that retain formatting and images while giving instructors visibility into authorship behaviors.
+
+Problem It Solves
+- Traditional editors (MS Word, Obsidian, Notion) focus on content creation but don’t surface integrity signals during writing. Clio fills this gap by giving real-time indicators that can discourage copy-paste misuse and support fair assessment, while still delivering professional document exports.
+
+Key Features
+- Rich writing editor: headings, lists, bold/italic, text alignment, inline images.
+- Integrity signals: live WPM tracking, paste detection, and a status chip for quick feedback.
+- Exports:
+  - Download DOCX directly from the browser.
+  - Export PDF via a server conversion that preserves text, colors, and images.
+- Optional Spotify integration: connect account and control playback to support focus without leaving the writing context.
+- Clean, exam-friendly UI: minimal distractions, built for timed essay tasks.
+
+How It Works (High-Level)
+- Frontend editor captures text and images and builds a `.docx` using a document model (paragraphs, runs, images).
+- For PDF, the `.docx` is posted to a server API that:
+  - Converts DOCX → HTML with embedded images.
+  - Renders HTML → PDF using a headless browser for print-quality output.
+- Behavioral signals are calculated client-side: WPM over time and paste event counts.
+
+How To Use
+- Go to the login page and proceed to the writer page.
+- Write your essay, insert images, and format with headings and lists.
+- Export options:
+  - Click “Download DOCX” for a Word-compatible file.
+  - Click “Export as PDF” for a high-fidelity PDF.
+- Optional: connect Spotify to play music while you write.
+- Use the “Logout” button on the writer page when finished.
+
+Why It’s Different (vs Notion, MS Word, Obsidian)
+- Integrity-aware writing:
+  - Clio surfaces paste detection and typing speed changes in real time; others don’t.
+- Web-based high-fidelity exports:
+  - Clio’s DOCX→PDF route preserves headings, lists, and images consistently across devices.
+- Focused workflow:
+  - Clio minimizes distractions, tailored for essay composition and exams.
+- Privacy-aware signals:
+  - Uses simple metrics (paste/WPM) instead of invasive logging.
+
+Privacy & Ethics
+- Only lightweight behavioral metrics (paste events, WPM) are used for indicators.
+- Avoids collecting sensitive content or keystroke-by-keystroke data.
+- Intended to encourage honest writing, not to punish; signals help instructors focus review.
+
+Current Status & Limitations
+- Signals are heuristic: they suggest risk, not proof of misconduct.
+- Export fidelity is high for typical academic formatting; very complex layouts may need tuning.
+- No advanced stylometry/ML in this version; future work can add deeper analysis.
+
+Future Directions
+- Stylometric and keystroke dynamics analysis (privacy-aware).
+- Instructor dashboards for submission history and integrity reports.
+- Academic templates and citation tooling; LMS integrations.
+- Enhanced export styles for complex documents.
+
+Tech Stack
+- Frontend: Next.js, React, TipTap, custom UI components.
+- Exports: docx on the client; mammoth + puppeteer on the server for PDF.
+- Optional integrations: Spotify Web Playback SDK with PKCE/implicit auth.
+
+Core Value
+- Clio promotes honest writing with gentle, real-time feedback while delivering documents that look professional and are easy to submit. It’s a bridge between integrity-aware composition and practical, high-quality outputs.

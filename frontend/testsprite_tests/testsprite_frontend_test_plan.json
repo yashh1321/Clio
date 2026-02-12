@@ -1,0 +1,282 @@
+[
+  {
+    "id": "TC001",
+    "title": "Editor Loads with Rich Text Editor Features",
+    "description": "Verify that the editor page loads correctly with all core rich text editing features including headings, lists, text styles, text alignment, and inline images support.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the authenticated Editor Page"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that the rich text editor loads successfully"
+      },
+      {
+        "type": "action",
+        "description": "Insert headings, multiple list types, apply various text styles (bold, italic, underline), change text alignment (left, center, right, justify), and insert inline images"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that all inserted elements are rendered correctly in the editor"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Typing Speed Analytics Display and Integrity Status Updates",
+    "description": "Ensure that the editor calculates typing speed (words per minute) over sliding windows accurately and updates the integrity status indicator chip with appropriate color-coded feedback in real-time.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Start typing continuously in the editor for a duration sufficient to calculate WPM"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that the typing speed analytics engine updates the typing speed calculation dynamically"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the integrity status chip changes color based on predefined speed thresholds (e.g., green for normal, yellow for slowed typing)"
+      },
+      {
+        "type": "action",
+        "description": "Pause typing and then resume typing at a fast speed"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure the status chip updates promptly to reflect changes in typing speed"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Paste Event Detection and Integrity Feedback",
+    "description": "Validate that paste events into the editor are detected in real-time locally and cause the integrity status indicator chip to display a paste alert with corresponding color feedback.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Copy text from external source"
+      },
+      {
+        "type": "action",
+        "description": "Paste the copied text into the editor"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the paste event is detected locally without external data transmission"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that the integrity status chip displays a color-coded alert indicating the paste event"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Export Document to DOCX with Formatting and Images Preserved",
+    "description": "Test that exporting a composed document to DOCX format produces a file that retains headings, lists, text styles, alignments, and inline images with greater than 95% fidelity.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Compose a test document in the editor with headings, various styled text, bullet and numbered lists, alignments, and embedded inline images"
+      },
+      {
+        "type": "action",
+        "description": "Trigger document export in DOCX format"
+      },
+      {
+        "type": "assertion",
+        "description": "Open the exported DOCX file and verify that all formatting elements and images appear with >95% fidelity compared to the editor view"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Export Document to PDF with Formatting and Images Preserved",
+    "description": "Validate that exporting a composed document to PDF format through server-side conversion produces a file retaining the original formatting, layout, and embedded images with greater than 95% fidelity.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Create a sample document in the editor that includes headings, lists, styled text, alignments, and inline images"
+      },
+      {
+        "type": "action",
+        "description": "Export the document to PDF format"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the PDF output matches the editor document with >95% fidelity in formatting and images"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Privacy Verification of Behavioral Analytics Data Collection",
+    "description": "Confirm that the behavioral analytics engine operates locally within the client and that no sensitive content or keystroke data is transmitted or stored externally, ensuring privacy compliance.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Use network monitoring tools while typing and pasting in the editor"
+      },
+      {
+        "type": "assertion",
+        "description": "Assert that no sensitive data such as full text input or keystroke logs are sent to any external servers"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm only aggregate metrics like typing speed and paste event flags are locally computed and stored"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Responsive Design on Desktop and Tablet",
+    "description": "Verify that the editor interface and functionality are fully responsive and consistent when accessed on desktop and tablet devices, maintaining usability and formatting integrity.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access the editor page using desktop browser and tablet device/browser"
+      },
+      {
+        "type": "assertion",
+        "description": "Check layout adapts appropriately to different screen sizes without UI element overlap or overflow"
+      },
+      {
+        "type": "action",
+        "description": "Edit or create a document on both devices including text styles and images"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify consistent document formatting and editor feature availability on both form factors"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Distraction-Free User Interface During Timed Writing",
+    "description": "Ensure that the editor UI presents a minimal, distraction-free environment optimized for academic timed writing scenarios, hiding non-essential elements and focusing on writing tools.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the editor page and begin timed writing session"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that UI hides or minimizes non-critical buttons, sidebars, and notifications"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure the integrity status chip is present but unobtrusive with clear color-coded feedback"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Integration of Integrity Status Chip with Real-time Behavioral Signals",
+    "description": "Test that the integrity status chip accurately integrates typing speed and paste event alerts to provide continuous and clear feedback during essay composition.",
+    "category": "integration",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Compose text in editor at varied speeds"
+      },
+      {
+        "type": "action",
+        "description": "Perform paste events at different intervals"
+      },
+      {
+        "type": "assertion",
+        "description": "Check the integrity chip reflects speed changes and alerts immediately with appropriate color changes"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Editor Performance with Large Document and Multiple Images",
+    "description": "Verify that the editor remains smooth, responsive, and functional when handling documents with a large amount of text and multiple embedded images.",
+    "category": "performance",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Create a large document inside the editor (e.g., >10,000 words) with multiple (5+) inline images"
+      },
+      {
+        "type": "action",
+        "description": "Perform normal editing operations: typing, deleting, styling text"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the editor is responsive without noticeable lag or freeze during all operations"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "User Can Log Out and Forced Access Denied to Editor",
+    "description": "Ensure that when a user logs out, they are properly redirected and cannot access the editor page without re-authentication.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in and navigate to the editor page"
+      },
+      {
+        "type": "action",
+        "description": "Click on the logout button"
+      },
+      {
+        "type": "assertion",
+        "description": "Check user is redirected to the Home Page or Login Page"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to access editor page URL directly post logout"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied or redirected to login requiring authentication"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Export Pipeline Handles Complex Layouts Correctly",
+    "description": "Test that the export pipeline for both DOCX and PDF formats correctly preserves complex layouts including nested lists, mixed alignments, and embedded images.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Create sample document with nested bullet and numbered lists, mixed text alignments, varied font styles, and multiple images"
+      },
+      {
+        "type": "action",
+        "description": "Export document to DOCX and PDF"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that both exported DOCX and PDF files correctly reflect the complex layout and formatting with high fidelity"
+      }
+    ]
+  }
+]

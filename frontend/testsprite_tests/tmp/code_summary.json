@@ -1,0 +1,49 @@
+{
+    "tech_stack": [
+        "Next.js",
+        "React",
+        "Tailwind CSS",
+        "TypeScript"
+    ],
+    "features": [
+        {
+            "name": "Home Page",
+            "description": "Landing page of the application.",
+            "files": [
+                "app/page.tsx",
+                "app/layout.tsx"
+            ]
+        },
+        {
+            "name": "Login Page",
+            "description": "User login interface.",
+            "files": [
+                "app/login/page.tsx"
+            ]
+        },
+        {
+            "name": "Editor Page",
+            "description": "Main editor interface for essay submission.",
+            "files": [
+                "app/editor/page.tsx",
+                "components/editor/Editor.tsx"
+            ]
+        },
+        {
+            "name": "Spotify Integration",
+            "description": "Spotify player integration.",
+            "files": [
+                "app/spotify/page.tsx"
+            ]
+        },
+        {
+            "name": "UI Components",
+            "description": "Reusable UI components.",
+            "files": [
+                "components/ui/button.tsx",
+                "components/ui/card.tsx",
+                "components/ui/input.tsx"
+            ]
+        }
+    ]
+}

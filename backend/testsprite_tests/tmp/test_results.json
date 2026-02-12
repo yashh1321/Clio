@@ -1,0 +1,72 @@
+[
+  {
+    "projectId": "bde7c0f0-95ff-4fa1-af9a-af3bf090d811",
+    "testId": "6bf9e8f2-f440-4693-9f81-89cf49ede641",
+    "userId": "04b83408-3071-706b-7f0f-fd383a9361c6",
+    "title": "TC001-submit_essay_with_valid_data",
+    "description": "Test the /submit endpoint by submitting an essay with all required fields including student_id, assignment_title, content, wpm, and paste_count. Verify that the response returns a success message and a score indicating the essay was accepted.",
+    "code": "import requests\n\nBASE_ENDPOINT = \"http://localhost:8000\"\nTIMEOUT = 30\n\ndef test_submit_essay_with_valid_data():\n    url = f\"{BASE_ENDPOINT}/submit\"\n    payload = {\n        \"student_id\": \"student123\",\n        \"assignment_title\": \"The Impact of Climate Change\",\n        \"content\": \"Climate change is a critical global issue that requires immediate attention.\",\n        \"wpm\": 40,\n        \"paste_count\": 0\n    }\n    headers = {\n        \"Content-Type\": \"application/json\"\n    }\n    try:\n        response = requests.post(url, json=payload, headers=headers, timeout=TIMEOUT)\n        response.raise_for_status()\n    except requests.RequestException as e:\n        assert False, f\"Request failed: {e}\"\n\n    json_response = response.json()\n    assert \"message\" in json_response, \"Response missing 'message'\"\n    assert isinstance(json_response[\"message\"], str), \"'message' should be a string\"\n    assert \"score\" in json_response, \"Response missing 'score'\"\n    assert isinstance(json_response[\"score\"], int), \"'score' should be an integer\"\n    assert response.status_code == 200, f\"Unexpected status code {response.status_code}\"\n    assert \"success\" in json_response[\"message\"].lower(), \"Response message does not indicate success\"\n\ntest_submit_essay_with_valid_data()",
+    "testStatus": "PASSED",
+    "testError": "",
+    "testType": "BACKEND",
+    "createFrom": "mcp",
+    "created": "2026-02-12T13:13:38.673Z",
+    "modified": "2026-02-12T13:14:09.812Z"
+  },
+  {
+    "projectId": "bde7c0f0-95ff-4fa1-af9a-af3bf090d811",
+    "testId": "72cc6de5-d89e-4b59-a2a4-d69bea002afa",
+    "userId": "04b83408-3071-706b-7f0f-fd383a9361c6",
+    "title": "TC002-submit_essay_with_invalid_wpm",
+    "description": "Test the /submit endpoint by submitting an essay with an invalid or anomalous wpm value. Verify that the API rejects the submission or returns an appropriate error message indicating invalid typing speed.",
+    "code": "import requests\n\nBASE_URL = \"http://localhost:8000\"\nTIMEOUT = 30\nHEADERS = {\"Content-Type\": \"application/json\"}\n\ndef test_submit_essay_with_invalid_wpm():\n    url = f\"{BASE_URL}/submit\"\n    # Construct payload with invalid/anomalous wpm value (e.g., negative or excessively high)\n    payload = {\n        \"student_id\": \"test_student_123\",\n        \"assignment_title\": \"Test Assignment Invalid WPM\",\n        \"content\": \"This is a test essay content for invalid wpm.\",\n        \"wpm\": -10,  # invalid typing speed (negative)\n        \"paste_count\": 0\n    }\n    try:\n        response = requests.post(url, json=payload, headers=HEADERS, timeout=TIMEOUT)\n    except requests.RequestException as e:\n        assert False, f\"Request failed: {e}\"\n\n    # The API should reject invalid wpm or return an error indicating invalid typing speed.\n\n    # It might respond with a status code other than 200 or with error message in 200.\n    if response.status_code == 200:\n        resp_json = {}\n        try:\n            resp_json = response.json()\n        except Exception:\n            assert False, \"Response is not valid JSON\"\n\n        # Check for message indicating invalid typing speed or a rejection message\n        message = resp_json.get(\"message\", \"\").lower()\n        # The API might still return 200 and a message indicating failure\n        assert (\n            \"invalid\" in message or \"error\" in message or \"reject\" in message or \"invalid wpm\" in message\n        ), f\"Unexpected success response message: {resp_json.get('message')}\"\n    else:\n        # Non-200 status code expected for invalid wpm submissions\n        assert response.status_code >= 400, f\"Expected error status code but got {response.status_code}\"\n\ntest_submit_essay_with_invalid_wpm()",
+    "testStatus": "FAILED",
+    "testError": "Traceback (most recent call last):\n  File \"/var/task/handler.py\", line 258, in run_with_retry\n    exec(code, exec_env)\n  File \"<string>\", line 42, in <module>\n  File \"<string>\", line 36, in test_submit_essay_with_invalid_wpm\nAssertionError: Unexpected success response message: Submitted Successfully\n",
+    "testType": "BACKEND",
+    "createFrom": "mcp",
+    "created": "2026-02-12T13:13:38.678Z",
+    "modified": "2026-02-12T13:14:03.759Z"
+  },
+  {
+    "projectId": "bde7c0f0-95ff-4fa1-af9a-af3bf090d811",
+    "testId": "5fa53047-aafb-44d9-b528-8e8537eea135",
+    "userId": "04b83408-3071-706b-7f0f-fd383a9361c6",
+    "title": "TC003-submit_essay_with_invalid_paste_count",
+    "description": "Test the /submit endpoint by submitting an essay with an invalid or anomalous paste_count value. Verify that the API rejects the submission or returns an appropriate error message indicating invalid paste event count.",
+    "code": "import requests\n\nBASE_URL = \"http://localhost:8000\"\nSUBMIT_ENDPOINT = f\"{BASE_URL}/submit\"\nTIMEOUT = 30\n\ndef test_submit_essay_with_invalid_paste_count():\n    headers = {\"Content-Type\": \"application/json\"}\n    # Invalid paste_count values to test that are invalid types (string instead of integer)\n    invalid_paste_counts = [\"invalid\", None, 12.34]\n    for paste_count in invalid_paste_counts:\n        payload = {\n            \"student_id\": \"test_student_123\",\n            \"assignment_title\": \"Test Essay Invalid Paste Count\",\n            \"content\": \"This is a test essay content to check invalid paste_count handling.\",\n            \"wpm\": 40,\n            \"paste_count\": paste_count\n        }\n        try:\n            response = requests.post(SUBMIT_ENDPOINT, json=payload, headers=headers, timeout=TIMEOUT)\n        except requests.RequestException as e:\n            assert False, f\"Request failed: {e}\"\n\n        # Expecting the API to reject with error, so non 200 status or error message in 200 response\n        if response.status_code == 200:\n            try:\n                res_json = response.json()\n            except Exception:\n                assert False, \"Response is 200 but not valid JSON\"\n\n            # If API accepts invalid paste_count and returns success, it is a failure.\n            assert False, f\"API incorrectly accepted invalid paste_count={paste_count} with message: {res_json.get('message')}\"\n        else:\n            assert response.status_code >= 400, f\"Unexpected status code {response.status_code} for paste_count={paste_count}\"\n\ntest_submit_essay_with_invalid_paste_count()\n",
+    "testStatus": "PASSED",
+    "testError": "",
+    "testType": "BACKEND",
+    "createFrom": "mcp",
+    "created": "2026-02-12T13:13:38.682Z",
+    "modified": "2026-02-12T13:14:27.792Z"
+  },
+  {
+    "projectId": "bde7c0f0-95ff-4fa1-af9a-af3bf090d811",
+    "testId": "7b17732a-3680-461f-8091-189d32dd098e",
+    "userId": "04b83408-3071-706b-7f0f-fd383a9361c6",
+    "title": "TC004-submit_essay_missing_required_fields",
+    "description": "Test the /submit endpoint by submitting an essay request missing one or more required fields such as student_id, assignment_title, content, wpm, or paste_count. Verify that the API returns validation errors for missing fields.",
+    "code": "import requests\n\ndef test_submit_essay_missing_required_fields():\n    base_url = \"http://localhost:8000\"\n    endpoint = \"/submit\"\n    url = base_url + endpoint\n    headers = {\"Content-Type\": \"application/json\"}\n    timeout = 30\n\n    # Base valid payload with all required fields\n    valid_payload = {\n        \"student_id\": \"student123\",\n        \"assignment_title\": \"History Essay\",\n        \"content\": \"This is the content of the essay.\",\n        \"wpm\": 40,\n        \"paste_count\": 1\n    }\n\n    required_fields = [\"student_id\", \"assignment_title\", \"content\", \"wpm\", \"paste_count\"]\n\n    for field in required_fields:\n        # Create payload missing one required field\n        payload = valid_payload.copy()\n        payload.pop(field)\n\n        response = requests.post(url, json=payload, headers=headers, timeout=timeout)\n        try:\n            json_response = response.json()\n        except Exception:\n            json_response = None\n\n        # Validate that the API returns a client error (likely 422 Unprocessable Entity) for missing required field\n        assert response.status_code >= 400 and response.status_code < 500, \\\n            f\"Expected 4xx status code for missing field '{field}', got {response.status_code}\"\n\n        # Validate the response contains validation error details mentioning the missing field\n        assert json_response and isinstance(json_response, dict), \"Response JSON body expected\"\n        error_str = str(json_response).lower()\n        assert field.replace(\"_\", \"\") in error_str or field in error_str or \"required\" in error_str or \"missing\" in error_str, \\\n            f\"Expected validation error mentioning missing field '{field}'. Response: {json_response}\"\n\ntest_submit_essay_missing_required_fields()",
+    "testStatus": "PASSED",
+    "testError": "",
+    "testType": "BACKEND",
+    "createFrom": "mcp",
+    "created": "2026-02-12T13:13:38.687Z",
+    "modified": "2026-02-12T13:13:59.862Z"
+  },
+  {
+    "projectId": "bde7c0f0-95ff-4fa1-af9a-af3bf090d811",
+    "testId": "c5fe6443-09fb-4a56-9a4a-c070f673d18d",
+    "userId": "04b83408-3071-706b-7f0f-fd383a9361c6",
+    "title": "TC005-get_submissions_returns_all_submissions",
+    "description": "Test the /submissions endpoint by making a GET request to retrieve all stored essay submissions. Verify that the response returns an array of submissions with correct data structure and content for instructor review.",
+    "code": "import requests\n\nBASE_URL = \"http://localhost:8000\"\nTIMEOUT = 30\nHEADERS = {\"Accept\": \"application/json\"}\n\n\ndef test_get_submissions_returns_all_submissions():\n    try:\n        response = requests.get(f\"{BASE_URL}/submissions\", headers=HEADERS, timeout=TIMEOUT)\n    except requests.RequestException as e:\n        assert False, f\"Request failed: {e}\"\n\n    assert response.status_code == 200, f\"Expected status code 200 but got {response.status_code}\"\n    try:\n        submissions = response.json()\n    except ValueError:\n        assert False, \"Response is not a valid JSON\"\n\n    assert isinstance(submissions, list), \"Response JSON is not a list\"\n\n    if submissions:\n        submission = submissions[0]\n        assert isinstance(submission, dict), \"Submission item is not a dictionary\"\n        # Validate expected keys based on typical submission structure from the schema properties in PRD\n        expected_keys = {\"student_id\", \"assignment_title\", \"content\", \"wpm\", \"paste_count\"}\n        missing_keys = expected_keys - submission.keys()\n        assert not missing_keys, f\"Missing keys in submission item: {missing_keys}\"\n\n        # Validate types\n        assert isinstance(submission[\"student_id\"], str), \"student_id is not a string\"\n        assert isinstance(submission[\"assignment_title\"], str), \"assignment_title is not a string\"\n        assert isinstance(submission[\"content\"], str), \"content is not a string\"\n        assert isinstance(submission[\"wpm\"], int), \"wpm is not an integer\"\n        assert isinstance(submission[\"paste_count\"], int), \"paste_count is not an integer\"\n\n\ntest_get_submissions_returns_all_submissions()",
+    "testStatus": "PASSED",
+    "testError": "",
+    "testType": "BACKEND",
+    "createFrom": "mcp",
+    "created": "2026-02-12T13:13:38.692Z",
+    "modified": "2026-02-12T13:14:01.689Z"
+  }
+]
