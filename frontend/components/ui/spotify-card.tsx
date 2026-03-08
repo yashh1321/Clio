@@ -12,12 +12,12 @@ type Song = {
   uri?: string
 }
 
-export function SpotifyCard({ songs }: { songs?: Song[] }) {
+export function SpotifyCard() {
   const [playing, setPlaying] = React.useState(false)
   const [progress, setProgress] = React.useState(0)
   const [deviceId, setDeviceId] = React.useState<string | null>(null)
   const [token, setToken] = React.useState<string | null>(null)
-  const playerRef = React.useRef<any>(null)
+  const playerRef = React.useRef<unknown>(null)
   const [spTrack, setSpTrack] = React.useState<Song | null>(null)
   const [playlists, setPlaylists] = React.useState<Array<{ id: string; name: string; image: string; uri: string }>>([])
   const [loadingPlaylists, setLoadingPlaylists] = React.useState(false)
@@ -28,7 +28,7 @@ export function SpotifyCard({ songs }: { songs?: Song[] }) {
     try {
       const t = localStorage.getItem("spotify_token")
       if (t) setToken(t)
-    } catch {}
+    } catch { }
   }, [])
 
   React.useEffect(() => {
@@ -41,24 +41,26 @@ export function SpotifyCard({ songs }: { songs?: Song[] }) {
       s.async = true
       document.body.appendChild(s)
     }
-    // @ts-ignore
+    // @ts-expect-error Spotify SDK is global
     window.onSpotifyWebPlaybackSDKReady = () => {
-      // @ts-ignore
+      // @ts-expect-error Spotify SDK is global
       const player = new window.Spotify.Player({
         name: "Clio Player",
         getOAuthToken: (cb: (t: string) => void) => cb(token),
         volume: 0.7,
       })
       playerRef.current = player
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       player.addListener('ready', ({ device_id }: any) => {
         setDeviceId(device_id)
       })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       player.addListener('player_state_changed', (state: any) => {
         const track = state?.track_window?.current_track
         if (track) {
           setSpTrack({
             title: track.name,
-            artists: (track.artists || []).map((a: any) => a.name).join(", "),
+            artists: (track.artists || []).map((a: { name: string }) => a.name).join(", "),
             duration: Math.round((track.duration_ms || 0) / 1000),
             albumArt: track.album?.images?.[0]?.url || "",
             uri: track.uri,
@@ -71,6 +73,14 @@ export function SpotifyCard({ songs }: { songs?: Song[] }) {
       })
       player.connect()
     }
+
+    return () => {
+      if (playerRef.current) {
+        // @ts-expect-error Spotify SDK player
+        playerRef.current.disconnect()
+        playerRef.current = null
+      }
+    }
   }, [token])
 
   React.useEffect(() => {
@@ -82,6 +92,7 @@ export function SpotifyCard({ songs }: { songs?: Song[] }) {
       .then(async r => {
         const d = await r.json()
         const fetched = (d?.items || [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const firstTwo = fetched.slice(0, 2).map((p: any) => ({
           id: p.id,
           name: p.name,
@@ -104,17 +115,18 @@ export function SpotifyCard({ songs }: { songs?: Song[] }) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ device_ids: [deviceId], play: false }),
-    }).catch(() => {})
+    }).catch(() => { })
   }, [deviceId, token])
 
   const toggle = async () => {
     if (!token || !deviceId) return
-    try { await playerRef.current?.activateElement?.() } catch {}
-    await fetch(`https://api.spotify.com/v1/me/player/${playing ? 'pause' : 'play'}?device_id=${deviceId}` , {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    try { (playerRef.current as any)?.activateElement?.() } catch { }
+    await fetch(`https://api.spotify.com/v1/me/player/${playing ? 'pause' : 'play'}?device_id=${deviceId}`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}` },
       body: playing ? undefined : (spTrack?.uri ? JSON.stringify({ uris: [spTrack.uri] }) : undefined),
-    }).catch(() => {})
+    }).catch(() => { })
     setPlaying(p => !p)
   }
 
@@ -123,7 +135,7 @@ export function SpotifyCard({ songs }: { songs?: Song[] }) {
     await fetch(`https://api.spotify.com/v1/me/player/next?device_id=${deviceId}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
-    }).catch(() => {})
+    }).catch(() => { })
     setPlaying(true)
     await new Promise(r => setTimeout(r, 250))
     await refreshNow()
@@ -134,7 +146,7 @@ export function SpotifyCard({ songs }: { songs?: Song[] }) {
     await fetch(`https://api.spotify.com/v1/me/player/previous?device_id=${deviceId}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
-    }).catch(() => {})
+    }).catch(() => { })
     setPlaying(true)
     await new Promise(r => setTimeout(r, 250))
     await refreshNow()
@@ -155,6 +167,7 @@ export function SpotifyCard({ songs }: { songs?: Song[] }) {
         if (item) {
           setSpTrack({
             title: item.name,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             artists: (item.artists || []).map((a: any) => a.name).join(", "),
             duration: Math.round((item.duration_ms || 0) / 1000),
             albumArt: item.album?.images?.[0]?.url || "",
@@ -164,7 +177,7 @@ export function SpotifyCard({ songs }: { songs?: Song[] }) {
         setPlaying(!!d?.is_playing)
         setProgress(Math.round((d?.progress_ms || 0) / 1000))
       }
-    } catch {}
+    } catch { }
   }
 
   const seekTo = async (ms: number) => {
@@ -172,19 +185,20 @@ export function SpotifyCard({ songs }: { songs?: Song[] }) {
     await fetch(`https://api.spotify.com/v1/me/player/seek?position_ms=${ms}&device_id=${deviceId}`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}` },
-    }).catch(() => {})
+    }).catch(() => { })
     await new Promise(r => setTimeout(r, 150))
     await refreshNow()
   }
 
   const playPlaylist = async (contextUri: string) => {
     if (!token || !deviceId) return
-    try { await playerRef.current?.activateElement?.() } catch {}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    try { (playerRef.current as any)?.activateElement?.() } catch { }
     await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ context_uri: contextUri }),
-    }).catch(() => {})
+    }).catch(() => { })
     setPlaying(true)
     await new Promise(r => setTimeout(r, 250))
     await refreshNow()
@@ -267,23 +281,23 @@ export function SpotifyCard({ songs }: { songs?: Song[] }) {
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+    <div className="rounded-xl border border-border bg-accent/20 p-4 backdrop-blur-md">
       {token ? (
         <div className="mb-3">
-          <div className="text-[10px] text-white/50 mb-1">Playlists</div>
+          <div className="text-[10px] text-muted-foreground mb-1">Playlists</div>
           <div className="grid grid-cols-3 gap-2">
             {(loadingPlaylists && playlists.length === 0) ? (
-              <div className="col-span-3 text-[10px] text-white/40">Loading...</div>
+              <div className="col-span-3 text-[10px] text-muted-foreground">Loading...</div>
             ) : (
               playlists.map(p => (
                 <button
                   key={p.id}
                   onClick={() => playPlaylist(p.uri)}
                   disabled={!deviceId}
-                  className="flex items-center gap-2 rounded-md border border-white/10 bg-black/40 px-2 py-1 hover:bg-black/60 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-md border border-border bg-background/40 px-2 py-1 hover:bg-background/60 disabled:opacity-50"
                 >
                   <Image src={p.image} alt="cover" width={24} height={24} unoptimized className="h-6 w-6 rounded object-cover" />
-                  <span className="text-[10px] text-white/80 truncate">{p.name}</span>
+                  <span className="text-[10px] text-foreground/80 truncate">{p.name}</span>
                 </button>
               ))
             )}
@@ -294,24 +308,24 @@ export function SpotifyCard({ songs }: { songs?: Song[] }) {
         <div className="flex items-center gap-3">
           <Image src={spTrack.albumArt} alt="album" width={56} height={56} unoptimized className="h-14 w-14 rounded-md object-cover" />
           <div className="flex-1">
-            <div className="text-sm font-semibold text-white">{spTrack.title}</div>
-            <div className="text-xs text-white/60">{spTrack.artists}</div>
+            <div className="text-sm font-semibold text-foreground">{spTrack.title}</div>
+            <div className="text-xs text-muted-foreground">{spTrack.artists}</div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="h-8 w-8 rounded-full bg-white/10 text-white hover:bg-white/20" onClick={prev}>⟨</button>
-            <button className="h-8 w-8 rounded-full bg-white text-black hover:bg-gray-200" onClick={toggle}>{playing ? "❚❚" : "►"}</button>
-            <button className="h-8 w-8 rounded-full bg-white/10 text-white hover:bg-white/20" onClick={next}>⟩</button>
+            <button className="h-8 w-8 rounded-full bg-accent text-foreground hover:bg-accent/80" onClick={prev}>⟨</button>
+            <button className="h-8 w-8 rounded-full bg-foreground text-background hover:bg-foreground/90" onClick={toggle}>{playing ? "❚❚" : "►"}</button>
+            <button className="h-8 w-8 rounded-full bg-accent text-foreground hover:bg-accent/80" onClick={next}>⟩</button>
           </div>
         </div>
       ) : (
-        <div className="h-20 w-full rounded-md bg-black/70 border border-white/10 flex items-center justify-between px-3">
-          <span className="text-xs text-white/40">Not connected</span>
+        <div className="h-20 w-full rounded-md bg-background/50 border border-border flex items-center justify-between px-3">
+          <span className="text-xs text-muted-foreground">Not connected</span>
           <button onClick={onConnect} className="px-2 py-1 rounded bg-green-600 text-white text-xs">+ Connect Spotify</button>
         </div>
       )}
       <div className="mt-3">
         <div
-          className="h-2 w-full rounded-full bg-white/10 cursor-pointer"
+          className="h-2 w-full rounded-full bg-accent/30 cursor-pointer"
           onClick={(e) => {
             const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
             const x = e.clientX - rect.left
@@ -326,22 +340,22 @@ export function SpotifyCard({ songs }: { songs?: Song[] }) {
           />
         </div>
       </div>
-      
+
       <div className="mt-2 flex justify-between items-center">
         {!token ? (
-            <button 
-                onClick={onConnect}
-                className="text-[10px] font-medium text-green-400 hover:text-green-300 flex items-center gap-1 uppercase tracking-wide"
-            >
-                <span>+ Connect Spotify</span>
-            </button>
+          <button
+            onClick={onConnect}
+            className="text-[10px] font-medium text-green-400 hover:text-green-300 flex items-center gap-1 uppercase tracking-wide"
+          >
+            <span>+ Connect Spotify</span>
+          </button>
         ) : (
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-green-500 font-medium">Spotify Connected</span>
-              <button onClick={() => { try { localStorage.removeItem('spotify_token') } catch {}; setToken(null); setDeviceId(null); setSpTrack(null); }} className="text-[10px] font-medium text-red-400 hover:text-red-300">Logout</button>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-green-500 font-medium">Spotify Connected</span>
+            <button onClick={() => { try { localStorage.removeItem('spotify_token') } catch { }; setToken(null); setDeviceId(null); setSpTrack(null); }} className="text-[10px] font-medium text-red-400 hover:text-red-300">Logout</button>
+          </div>
         )}
-        <span className="text-[10px] text-white/50">{pct}%</span>
+        <span className="text-[10px] text-muted-foreground">{pct}%</span>
       </div>
     </div>
   )

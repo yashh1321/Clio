@@ -1,10 +1,21 @@
 import mammoth from 'mammoth'
 import puppeteer from 'puppeteer'
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyToken } from '@/lib/auth'
 
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
+  // Auth check — only logged-in users can convert files
+  const token = req.cookies.get('clio_session')?.value
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const session = verifyToken(token)
+  if (!session) {
+    return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
+  }
+
   try {
     console.log('Starting PDF conversion...')
     const form = await req.formData()
@@ -38,9 +49,9 @@ export async function POST(req: NextRequest) {
     </style></head><body>${result.value}</body></html>`
 
     console.log('Launching Puppeteer...')
-    const browser = await puppeteer.launch({ 
+    const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     })
     console.log('Puppeteer launched. Opening page...')
     try {
@@ -49,16 +60,17 @@ export async function POST(req: NextRequest) {
       // Use 'load' instead of 'networkidle0' for faster/safer static content rendering
       await page.setContent(html, { waitUntil: 'load', timeout: 60000 })
       console.log('Content set. Generating PDF...')
-      const pdfBuffer = await page.pdf({ 
-        format: 'A4', 
-        printBackground: true, 
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
         margin: { top: '20mm', bottom: '20mm', left: '20mm', right: '20mm' },
         timeout: 60000
       })
       console.log('PDF generated. Size:', pdfBuffer.byteLength)
       const arrayBuffer = pdfBuffer.buffer.slice(pdfBuffer.byteOffset, pdfBuffer.byteOffset + pdfBuffer.byteLength) as ArrayBuffer
       const inName = (file as File).name || 'document.docx'
-      const base = inName.replace(/\.docx$/i, '') || 'document'
+      // Sanitize filename to prevent header injection
+      const base = inName.replace(/\.docx$/i, '').replace(/[^a-zA-Z0-9.\-_ ()]/g, '_') || 'document'
       return new NextResponse(arrayBuffer, { status: 200, headers: { 'Content-Type': 'application/pdf', 'Cache-Control': 'no-store', 'Content-Disposition': `attachment; filename="${base}.pdf"` } })
     } finally {
       console.log('Closing browser...')
@@ -66,6 +78,6 @@ export async function POST(req: NextRequest) {
     }
   } catch (error) {
     console.error('Detailed PDF Error:', error)
-    return new NextResponse(JSON.stringify({ error: 'conversion_failed', details: String(error) }), { status: 500, headers: { 'Content-Type': 'application/json' } })
+    return new NextResponse(JSON.stringify({ error: 'conversion_failed' }), { status: 500, headers: { 'Content-Type': 'application/json' } })
   }
 }

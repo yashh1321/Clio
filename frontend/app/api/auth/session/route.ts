@@ -4,6 +4,7 @@ import { verifyToken } from "@/lib/auth"
 // ── GET /api/auth/session ──────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
     const token = req.cookies.get("clio_session")?.value
+    console.log("[API Session] Token present:", !!token)
     if (!token) {
         return NextResponse.json({ authenticated: false }, { status: 401 })
     }

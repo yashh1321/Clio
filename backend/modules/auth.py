@@ -1,5 +1,4 @@
 import streamlit as st
-import hashlib
 from modules.database import login_user
 
 def render_login():
@@ -25,8 +24,8 @@ def render_login():
         st.subheader("Proof of Write Platform")
         
         with st.form("login_form"):
-            username = st.text_input("Username", placeholder="student or teacher")
-            password = st.text_input("Password", type="password", placeholder="123")
+            username = st.text_input("Username", placeholder="Enter your username")
+            password = st.text_input("Password", type="password", placeholder="Enter your password")
             submitted = st.form_submit_button("Login", use_container_width=True)
             
             if submitted:
@@ -40,7 +39,5 @@ def render_login():
                     st.session_state['logged_in'] = True
                     st.rerun()
                 else:
-                    st.error("Invalid credentials. Try student/123 or teacher/123")
-        
-        st.info("Default Logins:\n- **Student**: `student` / `123`\n- **Teacher**: `teacher` / `123`")
+                    st.error("Invalid credentials. Please check your username and password.")
 

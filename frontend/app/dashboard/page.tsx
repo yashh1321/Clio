@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { WebGLShader } from "../../components/ui/web-gl-shader"
+
 import { Button } from "../../components/ui/button"
 import ReplayTimeline, { type ReplaySnapshot } from "../../components/editor/ReplayTimeline"
 import {
@@ -16,6 +16,7 @@ import {
     Keyboard,
     Clipboard,
     ChevronRight,
+    ChevronDown,
     X,
     Search,
     BarChart3,
@@ -24,6 +25,10 @@ import {
     Send,
     Star,
     History,
+    FolderOpen,
+    CheckSquare,
+    Square,
+    Filter,
 } from "lucide-react"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -75,6 +80,8 @@ function wordCount(text: string | null | undefined) {
     return text.trim().split(/\s+/).filter(Boolean).length
 }
 
+import { WebGLShader } from "../../components/ui/web-gl-shader"
+
 // ── Dashboard Page ─────────────────────────────────────────────────────────────
 export default function DashboardPage() {
     const router = useRouter()
@@ -85,6 +92,8 @@ export default function DashboardPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [sessionChecked, setSessionChecked] = useState(false)
     const [sanitizedContent, setSanitizedContent] = useState("")
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+    const [groupsInitialized, setGroupsInitialized] = useState(false)
 
     // ── Grading state ──
     const [gradeScore, setGradeScore] = useState("")
@@ -96,16 +105,51 @@ export default function DashboardPage() {
     // ── Replay state ──
     const [showReplay, setShowReplay] = useState(false)
 
+    // ── Bulk selection state ──
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+    const [bulkGrading, setBulkGrading] = useState(false)
+    const [bulkScore, setBulkScore] = useState("")
+    const [bulkFeedback, setBulkFeedback] = useState("")
+    const [showBulkPanel, setShowBulkPanel] = useState(false)
+
+    // ── Filter state ──
+    const [filterStatus, setFilterStatus] = useState<"all" | "graded" | "ungraded">("all")
+    const [filterMinScore, setFilterMinScore] = useState(0)
+    const [filterMaxScore, setFilterMaxScore] = useState(100)
+    const [showFilters, setShowFilters] = useState(false)
+
+    // ── Rubric state ──
+    const [useRubric, setUseRubric] = useState(false)
+    const [rubricCriteria, setRubricCriteria] = useState<{ name: string; maxScore: number; score: string }[]>([
+        { name: "Content", maxScore: 25, score: "" },
+        { name: "Grammar", maxScore: 25, score: "" },
+        { name: "Structure", maxScore: 25, score: "" },
+        { name: "Originality", maxScore: 25, score: "" },
+    ])
+
     // ── Server-side session check ──
     useEffect(() => {
         async function checkSession() {
             try {
-                const res = await fetch("/api/auth/session")
-                if (!res.ok) { router.replace("/login"); return }
+                const res = await fetch("/api/auth/session", { cache: "no-store", credentials: "include" })
+                console.log("[Dashboard] Session check status:", res.status)
+                if (!res.ok) {
+                    console.warn("[Dashboard] Session check failed, redirecting")
+                    router.replace("/login")
+                    return
+                }
                 const data = await res.json()
-                if (!data.authenticated || data.role !== "teacher") { router.replace("/login"); return }
+                console.log("[Dashboard] Session data:", data)
+                if (!data.authenticated || data.role !== "teacher") {
+                    console.warn("[Dashboard] Invalid session or role, redirecting")
+                    router.replace("/login")
+                    return
+                }
                 setSessionChecked(true)
-            } catch { router.replace("/login") }
+            } catch (e) {
+                console.error("[Dashboard] Session check error:", e)
+                router.replace("/login")
+            }
         }
         checkSession()
     }, [router])
@@ -163,7 +207,10 @@ export default function DashboardPage() {
     const handleGrade = async () => {
         if (!selected) return
         const numScore = parseInt(gradeScore, 10)
-        if (isNaN(numScore) || numScore < 0 || numScore > 100) return
+        if (isNaN(numScore) || numScore < 0 || numScore > 100) {
+            setGradeError("Grade must be between 0 and 100")
+            return
+        }
 
         setGrading(true)
         setGradeSuccess(false)
@@ -197,11 +244,102 @@ export default function DashboardPage() {
         }
     }
 
-    // ── Filtered list ──
+    // ── Bulk Grade ──
+    const handleBulkGrade = async () => {
+        const numScore = parseInt(bulkScore, 10)
+        if (isNaN(numScore) || numScore < 0 || numScore > 100) return
+        setBulkGrading(true)
+        try {
+            const ids = Array.from(selectedIds)
+            const promises = ids.map(id =>
+                fetch("/api/grades", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ submission_id: id, score: numScore, feedback: bulkFeedback }),
+                }).then(res => {
+                    if (!res.ok) throw new Error(`Failed to grade ${id}`)
+                    return res.json()
+                })
+            )
+
+            await Promise.allSettled(promises)
+
+            await fetchSubmissions()
+            setSelectedIds(new Set())
+            setShowBulkPanel(false)
+            setBulkScore("")
+            setBulkFeedback("")
+        } catch { /* silent */ }
+        finally { setBulkGrading(false) }
+    }
+
+    // ── Toggle selection helpers ──
+    const toggleSelection = (id: string) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id); else next.add(id)
+            return next
+        })
+    }
+    const toggleSelectAll = () => {
+        if (selectedIds.size === filtered.length) setSelectedIds(new Set())
+        else setSelectedIds(new Set(filtered.map(s => s.id)))
+    }
+
+    // ── Filtered list (enhanced with status + score filters) ──
     const filtered = submissions.filter((s) => {
         const q = searchQuery.toLowerCase()
-        return s.student_id.toLowerCase().includes(q) || s.assignment_title.toLowerCase().includes(q)
+        const matchesSearch = s.student_id.toLowerCase().includes(q) || s.assignment_title.toLowerCase().includes(q)
+        const matchesStatus = filterStatus === "all" ? true
+            : filterStatus === "graded" ? s.grade !== null
+                : s.grade === null
+        const matchesScore = s.integrity_score >= filterMinScore && s.integrity_score <= filterMaxScore
+        return matchesSearch && matchesStatus && matchesScore
     })
+
+    // ── Group submissions by assignment_title ──
+    const grouped = filtered.reduce<Record<string, Submission[]>>((acc, sub) => {
+        const key = sub.assignment_title || "Untitled"
+        if (!acc[key]) acc[key] = []
+        acc[key].push(sub)
+        return acc
+    }, {})
+
+    // Sort groups: most recent submission first, "Untitled" last
+    const sortedGroupKeys = Object.keys(grouped).sort((a, b) => {
+        if (a === "Untitled") return 1
+        if (b === "Untitled") return -1
+        // Since submissions are already sorted newest-first by the backend,
+        // index 0 is the newest submission for that assignment.
+        const latestA = new Date(grouped[a][0]?.timestamp || 0).getTime()
+        const latestB = new Date(grouped[b][0]?.timestamp || 0).getTime()
+        return latestB - latestA
+    })
+
+    // Auto-expand all groups on first load
+    useEffect(() => {
+        if (!groupsInitialized && sortedGroupKeys.length > 0) {
+            setExpandedGroups(new Set(sortedGroupKeys))
+            setGroupsInitialized(true)
+        }
+    }, [sortedGroupKeys, groupsInitialized])
+
+    const toggleGroup = (key: string) => {
+        setExpandedGroups(prev => {
+            const next = new Set(prev)
+            if (next.has(key)) next.delete(key)
+            else next.add(key)
+            return next
+        })
+    }
+
+    const toggleAllGroups = () => {
+        if (expandedGroups.size === sortedGroupKeys.length) {
+            setExpandedGroups(new Set())
+        } else {
+            setExpandedGroups(new Set(sortedGroupKeys))
+        }
+    }
 
     // ── Aggregate stats ──
     const totalSubmissions = submissions.length
@@ -212,15 +350,18 @@ export default function DashboardPage() {
 
     if (!sessionChecked) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-black">
+            <div className="flex min-h-[125vh] items-center justify-center bg-black">
                 <Loader2 className="h-8 w-8 animate-spin text-white/40" />
             </div>
         )
     }
 
     return (
-        <div className="relative min-h-screen w-full bg-black text-white overflow-hidden font-sans">
-            <div className="absolute inset-0 opacity-30 pointer-events-none"><WebGLShader /></div>
+        <div className="relative min-h-[125vh] w-full bg-black text-white font-sans">
+            {/* Background Animation */}
+            <div className="fixed inset-0 z-0 opacity-40">
+                <WebGLShader />
+            </div>
 
             {/* ─── Header ─── */}
             <header className="relative z-10 flex items-center justify-between border-b border-white/10 bg-black/50 px-6 py-4 backdrop-blur-md">
@@ -233,6 +374,12 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-3">
                     <Button variant="ghost" size="sm" onClick={fetchSubmissions} className="text-white/70 hover:text-white hover:bg-white/10 h-8 px-3">Refresh</Button>
+                    <Button variant="ghost" size="sm" onClick={() => router.push("/assignments")} className="text-white/70 hover:text-white hover:bg-white/10 h-8 px-3">Assignments</Button>
+                    <Button variant="ghost" size="sm" onClick={() => router.push("/analytics")} className="text-white/70 hover:text-white hover:bg-white/10 h-8 px-3">Analytics</Button>
+                    <Button variant="ghost" size="sm" onClick={() => router.push("/similarity")} className="text-white/70 hover:text-white hover:bg-white/10 h-8 px-3">Similarity</Button>
+                    <Button variant="ghost" size="sm" onClick={() => router.push("/classes")} className="text-white/70 hover:text-white hover:bg-white/10 h-8 px-3">Classes</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { window.location.href = "/api/export/grades" }} className="text-white/70 hover:text-white hover:bg-white/10 h-8 px-3">Export CSV</Button>
+                    <Button variant="ghost" size="sm" onClick={() => router.push("/profile")} className="text-white/70 hover:text-white hover:bg-white/10 h-8 px-3">Profile</Button>
                     <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white/70 hover:text-white hover:bg-white/10 h-8 px-3">
                         <LogOut className="mr-1 h-3 w-3" />Logout
                     </Button>
@@ -240,7 +387,7 @@ export default function DashboardPage() {
             </header>
 
             {/* ─── Main ─── */}
-            <main className="relative z-10 flex h-[calc(100vh-73px)]">
+            <main className="relative z-10 flex h-[calc(125vh-73px)]">
                 {/* ── Left: Submission List ── */}
                 <div className="w-[420px] border-r border-white/10 bg-black/20 backdrop-blur-md flex flex-col min-h-0">
                     {/* Stats row */}
@@ -269,9 +416,56 @@ export default function DashboardPage() {
                             <input type="text" placeholder="Search by student or assignment…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-4 py-2 text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-white/30 transition-colors" />
                         </div>
+
+                        {/* Filter Toggle */}
+                        <div className="flex items-center justify-between mt-2">
+                            <button onClick={() => setShowFilters(v => !v)} className="flex items-center gap-1.5 text-[10px] text-white/40 hover:text-white/60 transition-colors">
+                                <Filter className="h-3 w-3" />
+                                {showFilters ? "Hide" : "Show"} Filters
+                                {filterStatus !== "all" && <span className="h-1.5 w-1.5 rounded-full bg-purple-400" />}
+                            </button>
+                            {selectedIds.size > 0 && (
+                                <button onClick={() => setShowBulkPanel(true)} className="flex items-center gap-1.5 text-[10px] text-purple-400 hover:text-purple-300 transition-colors font-semibold">
+                                    <CheckSquare className="h-3 w-3" />
+                                    Bulk Grade ({selectedIds.size})
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Filter Panel */}
+                        {showFilters && (
+                            <div className="mt-2 p-3 rounded-lg border border-white/10 bg-white/[0.03] space-y-3">
+                                <div className="flex gap-1">
+                                    {(["all", "graded", "ungraded"] as const).map(s => (
+                                        <button key={s} onClick={() => setFilterStatus(s)}
+                                            className={`flex-1 text-[10px] font-semibold py-1.5 rounded-md transition-colors uppercase tracking-wider ${filterStatus === s ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "text-white/40 hover:text-white/60 border border-transparent"}`}>
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-white/40 uppercase tracking-wider">Integrity Score Range</label>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <input type="number" min={0} max={100} value={filterMinScore} onChange={e => setFilterMinScore(Math.min(filterMaxScore, Math.max(0, parseInt(e.target.value) || 0)))}
+                                            className="w-16 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white text-center focus:outline-none focus:border-white/30" />
+                                        <span className="text-white/30 text-xs">–</span>
+                                        <input type="number" min={0} max={100} value={filterMaxScore} onChange={e => setFilterMaxScore(Math.max(filterMinScore, Math.min(100, parseInt(e.target.value) || 100)))}
+                                            className="w-16 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white text-center focus:outline-none focus:border-white/30" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Select All */}
+                        <div className="flex items-center justify-between mt-2">
+                            <button onClick={toggleSelectAll} className="flex items-center gap-1.5 text-[10px] text-white/30 hover:text-white/50 transition-colors">
+                                {selectedIds.size === filtered.length && filtered.length > 0 ? <CheckSquare className="h-3 w-3" /> : <Square className="h-3 w-3" />}
+                                {selectedIds.size === filtered.length && filtered.length > 0 ? "Deselect All" : "Select All"}
+                            </button>
+                        </div>
                     </div>
 
-                    {/* List */}
+                    {/* List — Grouped by Assignment */}
                     <div className="flex-1 overflow-y-auto glass-scroll px-3 pb-3">
                         {loading ? (
                             <div className="flex items-center justify-center h-40"><Loader2 className="h-6 w-6 animate-spin text-white/40" /></div>
@@ -288,34 +482,82 @@ export default function DashboardPage() {
                             </div>
                         ) : (
                             <div className="space-y-2 pt-1">
-                                {filtered.map((sub) => {
-                                    const badge = scoreBadge(sub.integrity_score)
-                                    const Icon = badge.icon
-                                    const isActive = selected?.id === sub.id
+                                {/* Toggle all groups */}
+                                <button onClick={toggleAllGroups} className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] uppercase tracking-wider text-white/30 hover:text-white/50 transition-colors">
+                                    <span>{sortedGroupKeys.length} assignment{sortedGroupKeys.length !== 1 ? "s" : ""}</span>
+                                    <span>{expandedGroups.size === sortedGroupKeys.length ? "Collapse All" : "Expand All"}</span>
+                                </button>
+
+                                {sortedGroupKeys.map((groupTitle) => {
+                                    const groupSubs = grouped[groupTitle]
+                                    const isExpanded = expandedGroups.has(groupTitle)
+                                    const groupAvgScore = Math.round(groupSubs.reduce((a, s) => a + s.integrity_score, 0) / groupSubs.length)
+                                    const groupGradedCount = groupSubs.filter(s => s.grade).length
+
                                     return (
-                                        <button key={sub.id} onClick={() => setSelected(sub)}
-                                            className={`w-full text-left rounded-xl border p-4 transition-all duration-200 group ${isActive ? "border-blue-500/40 bg-blue-500/10" : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20"}`}>
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="text-sm font-semibold text-white truncate">{sub.assignment_title || "Untitled"}</p>
-                                                        {sub.grade && <Star className="h-3 w-3 text-yellow-400 shrink-0" />}
-                                                    </div>
-                                                    <p className="text-xs text-white/40 mt-0.5">
-                                                        {sub.student_id} · {formatDate(sub.timestamp)}
-                                                        {sub.replay_snapshots?.length > 0 && (
-                                                            <span className="ml-1.5 text-purple-400/60">● {sub.replay_snapshots.length} snapshots</span>
-                                                        )}
+                                        <div key={groupTitle} className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
+                                            {/* Group Header */}
+                                            <button
+                                                onClick={() => toggleGroup(groupTitle)}
+                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.04] transition-colors"
+                                            >
+                                                <FolderOpen className="h-4 w-4 text-purple-400 shrink-0" />
+                                                <div className="flex-1 min-w-0 text-left">
+                                                    <p className="text-sm font-semibold text-white truncate">{groupTitle}</p>
+                                                    <p className="text-[10px] text-white/40 mt-0.5">
+                                                        {groupSubs.length} submission{groupSubs.length !== 1 ? "s" : ""}
+                                                        {groupGradedCount > 0 && <span className="ml-1.5 text-yellow-400/60">· {groupGradedCount} graded</span>}
                                                     </p>
                                                 </div>
-                                                <div className="flex items-center gap-2 shrink-0">
-                                                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>
-                                                        <Icon className="h-3 w-3" />{sub.integrity_score}
-                                                    </span>
-                                                    <ChevronRight className={`h-4 w-4 transition-colors ${isActive ? "text-blue-400" : "text-white/20 group-hover:text-white/40"}`} />
+                                                <span className={`text-xs font-medium ${scoreColor(groupAvgScore)}`}>{groupAvgScore}</span>
+                                                {isExpanded
+                                                    ? <ChevronDown className="h-4 w-4 text-white/30 shrink-0" />
+                                                    : <ChevronRight className="h-4 w-4 text-white/30 shrink-0" />
+                                                }
+                                            </button>
+
+                                            {/* Group Submissions */}
+                                            {isExpanded && (
+                                                <div className="border-t border-white/5 px-2 pb-2 space-y-1.5">
+                                                    {groupSubs.map((sub) => {
+                                                        const badge = scoreBadge(sub.integrity_score)
+                                                        const Icon = badge.icon
+                                                        const isActive = selected?.id === sub.id
+                                                        return (
+                                                            <button key={sub.id} onClick={() => setSelected(sub)}
+                                                                className={`w-full text-left rounded-lg border p-3 transition-all duration-200 group ${isActive ? "border-blue-500/40 bg-blue-500/10" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/15"}`}>
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <div className="flex items-center gap-2 min-w-0">
+                                                                        {/* Checkbox for bulk selection */}
+                                                                        <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); toggleSelection(sub.id) }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); toggleSelection(sub.id) } }} className="shrink-0 text-white/30 hover:text-white/60 transition-colors cursor-pointer">
+                                                                            {selectedIds.has(sub.id) ? <CheckSquare className="h-3.5 w-3.5 text-purple-400" /> : <Square className="h-3.5 w-3.5" />}
+                                                                        </span>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <p className="text-xs font-medium text-white/80 truncate">{sub.student_id}</p>
+                                                                                {sub.grade && <Star className="h-3 w-3 text-yellow-400 shrink-0" />}
+                                                                            </div>
+                                                                            <p className="text-[10px] text-white/70 mt-0.5">
+                                                                                {formatDate(sub.timestamp)}
+                                                                                {sub.replay_snapshots?.length > 0 && (
+                                                                                    <span className="ml-1.5 text-purple-400/60">● {sub.replay_snapshots.length} snapshots</span>
+                                                                                )}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2 shrink-0">
+                                                                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>
+                                                                            <Icon className="h-3 w-3" />{sub.integrity_score}
+                                                                        </span>
+                                                                        <ChevronRight className={`h-3.5 w-3.5 transition-colors ${isActive ? "text-blue-400" : "text-white/20 group-hover:text-white/40"}`} />
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+                                                        )
+                                                    })}
                                                 </div>
-                                            </div>
-                                        </button>
+                                            )}
+                                        </div>
                                     )
                                 })}
                             </div>
@@ -331,8 +573,8 @@ export default function DashboardPage() {
                             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
                                 <div>
                                     <h2 className="text-lg font-bold text-white">{selected.assignment_title || "Untitled"}</h2>
-                                    <p className="text-xs text-white/40 mt-0.5">
-                                        Student: <span className="text-white/60 font-medium">{selected.student_id}</span> · Submitted {formatDate(selected.timestamp)}
+                                    <p className="text-xs text-white/70 mt-0.5">
+                                        Student: <span className="text-white/80 font-medium">{selected.student_id}</span> · Submitted {formatDate(selected.timestamp)}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -363,17 +605,29 @@ export default function DashboardPage() {
                                             <h3 className="text-xs font-bold uppercase tracking-wider text-white/40 mb-4 flex items-center gap-2">
                                                 <FileText className="h-3.5 w-3.5" />Essay Content
                                             </h3>
-                                            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6">
-                                                <div className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap break-words"
-                                                    dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
+                                            <div id="essay-content" className="rounded-xl border border-white/10 bg-white/[0.03] p-6">
+                                                {sanitizedContent ? (
+                                                    <div className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap break-words"
+                                                        dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
+                                                ) : (
+                                                    <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap break-words">
+                                                        {selected.content || "No content available"}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
 
                                         {/* ── Grading Panel ── */}
                                         <div className="rounded-xl border border-white/10 bg-white/5 p-5 backdrop-blur-md">
-                                            <h3 className="text-xs font-bold uppercase tracking-wider text-white/40 mb-4 flex items-center gap-2">
-                                                <Star className="h-3.5 w-3.5 text-yellow-400" />
-                                                {selected.grade ? "Update Grade" : "Grade This Submission"}
+                                            <h3 className="text-xs font-bold uppercase tracking-wider text-white/40 mb-4 flex items-center justify-between">
+                                                <span className="flex items-center gap-2">
+                                                    <Star className="h-3.5 w-3.5 text-yellow-400" />
+                                                    {selected.grade ? "Update Grade" : "Grade This Submission"}
+                                                </span>
+                                                <button onClick={() => setUseRubric(v => !v)}
+                                                    className={`text-[10px] font-semibold px-2 py-1 rounded-md transition-colors ${useRubric ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "text-white/40 hover:text-white/60 border border-white/10"}`}>
+                                                    {useRubric ? "Rubric Mode" : "Overall Mode"}
+                                                </button>
                                             </h3>
 
                                             {selected.grade && (
@@ -391,17 +645,47 @@ export default function DashboardPage() {
                                             )}
 
                                             <div className="space-y-4">
-                                                <div>
-                                                    <label className="text-xs font-medium text-white/60 uppercase tracking-wider">Score (0–100)</label>
-                                                    <input type="number" min={0} max={100} value={gradeScore}
-                                                        onChange={(e) => setGradeScore(e.target.value)}
-                                                        placeholder="e.g. 85"
-                                                        className="mt-1.5 w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-lg font-bold placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 transition-colors" />
-                                                </div>
+                                                {useRubric ? (
+                                                    /* Rubric-Based Grading */
+                                                    <>
+                                                        {rubricCriteria.map((c, i) => (
+                                                            <div key={i} className="flex items-center gap-3">
+                                                                <div className="flex-1">
+                                                                    <label className="text-xs text-white/60">{c.name} (0–{c.maxScore})</label>
+                                                                    <input type="number" min={0} max={c.maxScore} value={c.score}
+                                                                        onChange={(e) => {
+                                                                            const updated = [...rubricCriteria]
+                                                                            const rawVal = parseInt(e.target.value)
+                                                                            const safeVal = isNaN(rawVal) ? "" : String(Math.min(Math.max(0, rawVal), c.maxScore))
+                                                                            updated[i] = { ...updated[i], score: safeVal }
+                                                                            setRubricCriteria(updated)
+                                                                            // Auto-calculate total
+                                                                            const total = updated.reduce((a, cr) => a + (parseInt(cr.score, 10) || 0), 0)
+                                                                            setGradeScore(String(total))
+                                                                        }}
+                                                                        className="mt-1 w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-bold placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 transition-colors" />
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        <div className="flex items-center justify-between px-1 py-2 border-t border-white/10">
+                                                            <span className="text-xs text-white/60 font-semibold">Total Score</span>
+                                                            <span className="text-lg font-bold text-purple-400">{gradeScore || 0}/100</span>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    /* Overall Grading */
+                                                    <div>
+                                                        <label className="text-xs font-medium text-white/60 uppercase tracking-wider">Score (0–100)</label>
+                                                        <input id="grade-score" type="number" min={0} max={100} value={gradeScore}
+                                                            onChange={(e) => setGradeScore(e.target.value)}
+                                                            placeholder="e.g. 85"
+                                                            className="mt-1.5 w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-lg font-bold placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 transition-colors" />
+                                                    </div>
+                                                )}
 
                                                 <div>
                                                     <label className="text-xs font-medium text-white/60 uppercase tracking-wider">Feedback</label>
-                                                    <textarea value={gradeFeedback}
+                                                    <textarea id="grade-feedback" value={gradeFeedback}
                                                         onChange={(e) => setGradeFeedback(e.target.value)}
                                                         placeholder="Write feedback for the student…"
                                                         rows={4}
@@ -409,7 +693,7 @@ export default function DashboardPage() {
                                                 </div>
 
                                                 <div className="flex items-center gap-3">
-                                                    <button onClick={handleGrade} disabled={grading || !gradeScore}
+                                                    <button id="submit-grade-btn" onClick={handleGrade} disabled={grading || !gradeScore}
                                                         className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:from-purple-500 hover:to-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20">
                                                         {grading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                                                         {grading ? "Submitting…" : selected.grade ? "Update Grade" : "Submit Grade"}
@@ -567,13 +851,50 @@ export default function DashboardPage() {
             </main>
 
             {/* ── Time Travel Replay Modal ── */}
-            {showReplay && selected?.replay_snapshots?.length > 0 && (
+            {showReplay && selected && selected.replay_snapshots && selected.replay_snapshots.length > 0 && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
                     <div className="w-full max-w-4xl h-[80vh] bg-black/90 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
                         <ReplayTimeline
                             snapshots={selected.replay_snapshots}
                             onClose={() => setShowReplay(false)}
                         />
+                    </div>
+                </div>
+            )}
+
+            {/* ── Bulk Grading Modal ── */}
+            {showBulkPanel && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                    <div className="w-full max-w-md bg-black/95 border border-white/10 rounded-xl shadow-2xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-sm font-bold text-white">Bulk Grade {selectedIds.size} Submissions</h3>
+                            <button onClick={() => setShowBulkPanel(false)} className="rounded-full p-1.5 hover:bg-white/10 transition-colors">
+                                <X className="h-4 w-4 text-white/40" />
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs text-white/60 uppercase tracking-wider">Score (0–100)</label>
+                                <input type="number" min={0} max={100} value={bulkScore}
+                                    onChange={(e) => setBulkScore(e.target.value)}
+                                    className="mt-1.5 w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-lg font-bold placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 transition-colors"
+                                    placeholder="e.g. 100" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-white/60 uppercase tracking-wider">Feedback (optional)</label>
+                                <textarea value={bulkFeedback} onChange={(e) => setBulkFeedback(e.target.value)}
+                                    rows={3} placeholder="Shared feedback for all selected…"
+                                    className="mt-1.5 w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 transition-colors resize-none" />
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button onClick={handleBulkGrade} disabled={bulkGrading || !bulkScore}
+                                    className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:from-purple-500 hover:to-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20">
+                                    {bulkGrading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                    {bulkGrading ? "Grading…" : `Grade ${selectedIds.size} Submissions`}
+                                </button>
+                                <button onClick={() => setShowBulkPanel(false)} className="text-xs text-white/40 hover:text-white/60">Cancel</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

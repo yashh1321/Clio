@@ -1,9 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+
+
 import { WebGLShader } from "@/components/ui/web-gl-shader"
 
+
 export default function LoginPage() {
+    const router = useRouter()
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
     const [error, setError] = useState<string | null>(null)
@@ -24,47 +29,53 @@ export default function LoginPage() {
 
             if (!res.ok) {
                 setError(data.error || "Login failed")
-                setLoading(false)
                 return
             }
 
-            // Server has set the HttpOnly cookie — redirect based on role
-            if (data.role === "teacher") {
-                window.location.href = "/dashboard"
+            // Store auth info for client-side checks
+            localStorage.setItem("clio_auth", JSON.stringify({
+                username: data.username,
+                role: data.role,
+            }))
+
+            // Use Next.js router for SPA navigation (preserves cookies through proxies)
+            if (data.role === "admin") {
+                router.push("/admin")
+            } else if (data.role === "teacher") {
+                router.push("/dashboard")
             } else {
-                window.location.href = "/editor"
+                router.push("/editor")
             }
         } catch {
             setError("Network error — is the server running?")
+        } finally {
             setLoading(false)
         }
     }
 
     return (
-        <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-black">
+        <div className="relative flex min-h-[125vh] w-full flex-col items-center justify-center overflow-hidden bg-black">
+            {/* Background Animation */}
             <WebGLShader />
-            <div className="relative z-10 border border-[#27272a] p-2 w-full mx-auto max-w-md">
-                <main className="relative border border-[#27272a] bg-black/50 backdrop-blur-md py-10 px-8 overflow-hidden rounded-xl">
 
-                    <div className="mb-8 text-center">
-                        <h1 className="mb-2 text-white text-3xl font-extrabold tracking-tighter">Welcome to Clio</h1>
-                        <p className="text-white/60 text-sm">Enter your credentials to continue.</p>
+            <div className="relative z-10 border border-[#27272a] p-2 w-full mx-auto max-w-lg">
+                <main className="relative border border-[#27272a] bg-black/50 backdrop-blur-md py-14 px-10 overflow-hidden rounded-xl">
+
+                    <div className="mb-10 text-center">
+                        <h1 className="mb-3 text-white text-4xl font-extrabold tracking-tighter">Welcome to Clio</h1>
+                        <p className="text-white/60 text-base">Enter your credentials to continue.</p>
                     </div>
 
-                    {/* Demo banner */}
-                    <div className="mb-6 rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-4 py-3 text-center">
-                        <p className="text-xs text-yellow-400/90 font-medium">⚠️ Demo Mode — client-side auth for development only</p>
-                        <p className="text-[10px] text-yellow-400/50 mt-1">
-                            Student: <span className="font-mono">student / 123</span> &nbsp;·&nbsp;
-                            Teacher: <span className="font-mono">teacher / 123</span>
-                        </p>
-                    </div>
 
-                    <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
+
+                    <form id="login-form" className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
                         <div className="space-y-2">
-                            <label className="text-xs font-medium text-white/80 uppercase tracking-wider">Username</label>
+                            <label htmlFor="username" className="text-xs font-medium text-white/80 uppercase tracking-wider">Username</label>
                             <input
+                                id="username"
+                                name="username"
                                 type="text"
+                                autoComplete="username"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 placeholder="e.g. student or teacher"
@@ -73,9 +84,12 @@ export default function LoginPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-medium text-white/80 uppercase tracking-wider">Password</label>
+                            <label htmlFor="password" className="text-xs font-medium text-white/80 uppercase tracking-wider">Password</label>
                             <input
+                                id="password"
+                                name="password"
                                 type="password"
+                                autoComplete="current-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="Enter password"
@@ -84,11 +98,12 @@ export default function LoginPage() {
                         </div>
 
                         {error && (
-                            <p className="text-sm text-red-400 text-center">{error}</p>
+                            <p id="login-error" className="text-sm text-red-400 text-center">{error}</p>
                         )}
 
                         <div className="pt-4 flex justify-center w-full">
                             <button
+                                id="login-button"
                                 type="submit"
                                 disabled={loading}
                                 className="w-full rounded-full bg-white/10 border border-white/20 text-white py-3 px-6 text-lg font-semibold hover:bg-white/20 transition-colors disabled:opacity-50"
@@ -97,6 +112,13 @@ export default function LoginPage() {
                             </button>
                         </div>
                     </form>
+
+                    <p className="text-center text-xs text-white/30 mt-5">
+                        Don&apos;t have an account?{" "}
+                        <a href="/register" className="text-purple-400 hover:text-purple-300 transition-colors font-medium">
+                            Register
+                        </a>
+                    </p>
 
                 </main>
             </div>

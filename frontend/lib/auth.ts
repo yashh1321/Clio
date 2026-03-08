@@ -63,7 +63,16 @@ export function verifyToken(token: string): { username: string; role: string } |
     if (!crypto.timingSafeEqual(sigBuf, expectedBuf)) return null
 
     try {
-        return JSON.parse(Buffer.from(data, "base64url").toString())
+        const parsed = JSON.parse(Buffer.from(data, "base64url").toString())
+        if (
+            typeof parsed === "object" &&
+            parsed !== null &&
+            typeof parsed.username === "string" &&
+            typeof parsed.role === "string"
+        ) {
+            return { username: parsed.username, role: parsed.role }
+        }
+        return null
     } catch {
         return null
     }

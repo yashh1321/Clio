@@ -1,66 +1,45 @@
-CLIO — Summary
+CLIO — Platform Summary (Updated March 2026)
 
 Overview
-- Clio is a web-based writing environment designed for academic integrity. It combines a modern rich-text editor with lightweight behavioral signals (typing speed, paste detection) and a high-fidelity export pipeline (DOCX and PDF) to help students write and submit essays that retain formatting and images while giving instructors visibility into authorship behaviors.
+- Clio is a modern academic integrity platform designed to verify authorship, protect student work, and enable confident writing. It uses a "Proof of Write" mechanism by tracking typing behavior (WPM, paste events, pacing) to generate an integrity score. This ensures content is authentically written by the student while giving instructors unmatched visibility into authorship behaviors.
 
 Problem It Solves
-- Traditional editors (MS Word, Obsidian, Notion) focus on content creation but don’t surface integrity signals during writing. Clio fills this gap by giving real-time indicators that can discourage copy-paste misuse and support fair assessment, while still delivering professional document exports.
+- Traditional editors (MS Word, Google Docs, Notion) focus on content creation but don’t surface integrity signals during writing. This leaves teachers relying on reactive, often inaccurate AI-checkers after the fact. Clio fills this gap by acting as a proactive, monitored environment that discourages copy-paste misuse and supports fair assessment, while still delivering a professional writing experience.
 
 Key Features
-- Rich writing editor: headings, lists, bold/italic, text alignment, inline images.
-- Integrity signals: live WPM tracking, paste detection, and a status chip for quick feedback.
-- Exports:
-  - Download DOCX directly from the browser.
-  - Export PDF via a server conversion that preserves text, colors, and images.
-- Optional Spotify integration: connect account and control playback to support focus without leaving the writing context.
-- Clean, exam-friendly UI: minimal distractions, built for timed essay tasks.
+- Rich Student Editor: Headings, lists, bold/italic, Cloud Autosave (drafts).
+- Live Integrity Signals: Real-time WPM tracking, paste detection, and an integrity status chip.
+- Session Replay: Periodic snapshots of the essay are taken, allowing teachers to play back the entire writing session like a video.
+- Structured Classes & Assignments: Teachers can create classes, enroll students, and assign essays with strict due dates and word count limits.
+- Teacher Dashboard: 
+  - Grouped submission viewer with detailed integrity reports.
+  - Similarity Checking: Compares student submissions against each other to identify collusion.
+  - Grading Panel: Assign scores (0-100) and provide rich feedback.
+  - Analytics: View class-wide trends and integrity score distributions.
+- Exports: Download DOCX or PDF directly from the browser. Export grades as CSV.
+- Optional Spotify Integration: Connect an account to control playback and support focus without leaving the writing context.
 
 How It Works (High-Level)
-- Frontend editor captures text and images and builds a `.docx` using a document model (paragraphs, runs, images).
-- For PDF, the `.docx` is posted to a server API that:
-  - Converts DOCX → HTML with embedded images.
-  - Renders HTML → PDF using a headless browser for print-quality output.
-- Behavioral signals are calculated client-side: WPM over time and paste event counts.
+- Frontend (Next.js): The student editor captures text and calculates behavioral signals purely on the client side. Periodic HTML snapshots are taken in the background.
+- Backend (Supabase): When submitted, the essay content, metrics (WPM/Paste Count), and replay snapshots are securely sent to the Next.js API. The API uses a Service Role Key to securely interact with the Supabase PostgreSQL database, ensuring students cannot bypass security rules.
+- Teacher View: Instructors log in to view aggregated dashboard data, grade submissions, and review flags.
 
-How To Use
-- Go to the login page and proceed to the writer page.
-- Write your essay, insert images, and format with headings and lists.
-- Export options:
-  - Click “Download DOCX” for a Word-compatible file.
-  - Click “Export as PDF” for a high-fidelity PDF.
-- Optional: connect Spotify to play music while you write.
-- Use the “Logout” button on the writer page when finished.
-
-Why It’s Different (vs Notion, MS Word, Obsidian)
-- Integrity-aware writing:
-  - Clio surfaces paste detection and typing speed changes in real time; others don’t.
-- Web-based high-fidelity exports:
-  - Clio’s DOCX→PDF route preserves headings, lists, and images consistently across devices.
-- Focused workflow:
-  - Clio minimizes distractions, tailored for essay composition and exams.
-- Privacy-aware signals:
-  - Uses simple metrics (paste/WPM) instead of invasive logging.
+Why It’s Different 
+- Integrity-aware writing: Clio surfaces paste detection in real-time to the student, encouraging original thought.
+- Proof of Write > Plagiarism Catcher: Because Clio records the drafting process and allows playback, it proves a student *did* write an essay, protecting them from false AI accusations.
+- Secure Monolithic Architecture: Built on Next.js 15 and Supabase with strict JWT-based Role-Based Access Control and tight PostgreSQL Row Level Security.
 
 Privacy & Ethics
 - Only lightweight behavioral metrics (paste events, WPM) are used for indicators.
-- Avoids collecting sensitive content or keystroke-by-keystroke data.
-- Intended to encourage honest writing, not to punish; signals help instructors focus review.
-
-Current Status & Limitations
-- Signals are heuristic: they suggest risk, not proof of misconduct.
-- Export fidelity is high for typical academic formatting; very complex layouts may need tuning.
-- No advanced stylometry/ML in this version; future work can add deeper analysis.
-
-Future Directions
-- Stylometric and keystroke dynamics analysis (privacy-aware).
-- Instructor dashboards for submission history and integrity reports.
-- Academic templates and citation tooling; LMS integrations.
-- Enhanced export styles for complex documents.
+- Avoids collecting keystroke-by-keystroke data or using invasive webcam proctoring.
+- Intended to encourage honest writing and protect students, not to punish; signals help instructors focus their review realistically.
 
 Tech Stack
-- Frontend: Next.js, React, TipTap, custom UI components.
-- Exports: docx on the client; mammoth + puppeteer on the server for PDF.
-- Optional integrations: Spotify Web Playback SDK with PKCE/implicit auth.
+- Full-Stack Framework: Next.js 15 (React 19, App Router)
+- Database: Supabase (PostgreSQL)
+- Styling: TailwindCSS v4 + Shadcn/UI, Glassmorphism design, WebGL Shaders (Dark theme default)
+- Editor: Tiptap (ProseMirror-based)
+- Security: DOMPurify (XSS protection), bcryptjs (password hashing), Strict RBAC.
 
 Core Value
-- Clio promotes honest writing with gentle, real-time feedback while delivering documents that look professional and are easy to submit. It’s a bridge between integrity-aware composition and practical, high-quality outputs.
+- Clio promotes honest writing by providing students with a focused, premium workspace, while delivering undeniable "Proof of Write" to educators so they can grade with absolute confidence.

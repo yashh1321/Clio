@@ -1,0 +1,185 @@
+# Clio Feature Recommendations
+
+> Comprehensive analysis of the current codebase with prioritized improvements for teachers and students.
+
+---
+
+## Current Feature Inventory
+
+| Feature | Teacher | Student |
+|---------|---------|---------|
+| Registration & Login | ✅ | ✅ |
+| Rich Text Editor (Tiptap) | — | ✅ |
+| Live WPM tracking | — | ✅ (tracked) |
+| Paste detection | — | ✅ (tracked) |
+| Integrity scoring | ✅ (view) | ✅ (auto-calc) |
+| Draft auto-save (IndexedDB + Supabase) | — | ✅ |
+| Export DOCX / PDF | — | ✅ |
+| Submission grading | ✅ | ✅ (view grade) |
+| Assignment creation | ✅ | — |
+| Dashboard with grouped submissions | ✅ | — |
+| Analytics (integrity, grades, timeline) | ✅ | — |
+| Similarity checking (n-gram Jaccard) | ✅ | — |
+| Class management + enrollment | ✅ | ✅ (view) |
+| CSV grade export | ✅ | — |
+| Batch grading workflow | ✅ | — |
+| Writing replay snapshots | ✅ (view) | ✅ (captured) |
+| Profile management | ✅ | ✅ |
+| Spotify integration | — | ✅ |
+| Dark/Light theme toggle | ✅ | ✅ |
+
+---
+
+## 🔥 High Impact — Must Have
+
+### 1. Student Notifications & Feedback View
+**Problem:** Students submit essays but have no idea when they're graded. They must manually check `/submissions`.
+**Solution:**
+- Add a notification bell on the editor header
+- Show unread grade count badge
+- Toast notification when a new grade is received
+- **API:** `GET /api/notifications` — fetch unread grades/feedback for student
+
+### 2. Teacher Comments on Specific Text (Inline Annotations)
+**Problem:** Teachers can only give a single overall `feedback` string per submission. No way to highlight a specific sentence and comment on it.
+**Solution:**
+- Add inline annotation support to the submission viewer on the dashboard
+- Teacher clicks a passage → types a comment → saved as JSON annotations
+- Student sees highlighted annotations when viewing their graded submission
+- **DB:** Add `annotations jsonb DEFAULT '[]'` column to `grades` table
+
+### 3. Due Date Reminders & Assignment Deadlines
+**Problem:** Assignments have a `due_date` field but students see no countdown, reminders, or late-submission warnings.
+**Solution:**
+- Show countdown timers on the editor page when working on an assignment
+- Color-code: green (>24h), yellow (<24h), red (overdue)
+- Block or flag late submissions with a `late: true` marker
+- Email/push notification 24h before deadline (future)
+
+### 4. Assignment-Specific Submission Flow
+**Problem:** Students currently type in the editor and submit with a free-text title. There's no structured flow tying a submission to a specific assignment.
+**Solution:**
+- Student dashboard page showing assigned work with status (Not Started / In Progress / Submitted / Graded)
+- Click an assignment → opens editor pre-filled with assignment title, word limit shown
+- Filter drafts by assignment
+
+---
+
+## ⭐ Medium Impact — Great Additions
+
+### 5. Writing Progress Dashboard for Students
+**Problem:** Students have no visibility into their own performance trends over time.
+**Solution:**
+- Student analytics page: avg WPM trend, integrity score history, grades received
+- Show improvement charts ("Your WPM improved 20% this month")
+- Gamification: streaks, badges for consistent writing
+
+### 6. Rubric-Based Grading
+**Problem:** Teachers grade with a single 0-100 score. No structured rubric criteria.
+**Solution:**
+- Allow teachers to attach rubrics to assignments (e.g., "Grammar: /25, Content: /25, Structure: /25, Originality: /25")
+- Auto-sum rubric scores
+- Students see breakdown per criterion
+
+### 7. Real-time Collaboration / Teacher Preview
+**Problem:** Teachers can't see student work until it's submitted.
+**Solution:**
+- "Live Preview" mode: teacher can view a student's current draft in read-only mode
+- Optional — teacher can unlock this per assignment for supervision during exams
+- Uses Supabase Realtime subscriptions
+
+### 8. Revision History & Diff View
+**Problem:** `replay_snapshots` captures writing history but there's no UI to compare revisions side-by-side.
+**Solution:**
+- "Revision History" tab on submission detail view
+- Side-by-side diff showing added/removed text between snapshots
+- Teachers can see exactly how the essay evolved
+
+### 9. Bulk Actions on Dashboard
+**Problem:** Teachers grading 73 submissions one-by-one is tedious.
+**Solution:**
+- Multi-select checkboxes on submissions
+- Bulk grade (apply same score/feedback to selection)
+- Bulk download as ZIP
+- "Grade All as 100" for quick pass/fail workflows
+
+### 10. Student Peer Review
+**Problem:** No collaborative learning between students.
+**Solution:**
+- Teacher assigns peer reviews: Student A reviews Student B's essay
+- Structured feedback form (not just free text)
+- Anonymized or named reviews (teacher's choice)
+
+---
+
+## 🛠️ Quality of Life Improvements
+
+### 11. Search & Filter Everywhere
+- Dashboard: ✅ exists (search by student/assignment)
+- Add: filter by date range, integrity score range, graded/ungraded toggle
+- Student submissions: add search + filter by grade status
+
+### 12. Keyboard Shortcuts
+- `Ctrl+S` → save draft (currently auto-saves but no manual trigger)
+- `Ctrl+Enter` → submit essay
+- `Ctrl+Shift+E` → export as PDF
+- Show shortcut hints on hover
+
+### 13. Word Count Goal Indicator
+**Problem:** Assignments have `max_word_count` but the editor doesn't show progress toward it.
+**Solution:**
+- Progress bar under the editor: "342 / 500 words"
+- Color changes: grey → green → yellow (90%) → red (over limit)
+
+### 14. Mobile-Responsive Editor
+- Current editor is desktop-focused (1249 lines of complex layout)
+- Add responsive breakpoints for tablet/phone
+- Simplified toolbar on mobile
+
+### 15. Email Integration
+- Send grade notifications via email
+- Send assignment reminders
+- Use Supabase Edge Functions + Resend/SendGrid
+
+### 16. Plagiarism Detection Enhancement
+- Current: Jaccard similarity on 4-gram word shingles (basic)
+- Add: comparison against a corpus of known essays
+- Add: highlight the specific matching passages
+- Add: external API integration (Turnitin-lite)
+
+---
+
+## 🏗️ Architecture Improvements
+
+### 17. API Response Caching
+- Cache profile lookups in memory (username → id is immutable)
+- Use `Cache-Control` headers for static data (assignment lists)
+- Reduces DB queries by ~40%
+
+### 18. WebSocket for Real-time Updates
+- Replace polling with Supabase Realtime for:
+  - Dashboard auto-refreshes when new submissions come in
+  - Student gets grade notification in real-time
+  - Live typing indicators for exam proctoring
+
+### 19. Error Boundary & Offline Mode
+- Add React error boundaries around each page
+- IndexedDB already stores drafts — enhance for full offline editor experience
+- Queue submissions when offline, sync when reconnected
+
+### 20. Role-Based Route Protection (Middleware)
+- Currently each API route checks `session.role` individually
+- Centralize this in Next.js middleware for cleaner code
+
+---
+
+## Recommended Priority Order
+
+| Priority | Features | Effort |
+|----------|----------|--------|
+| **Sprint 1** | #3 Due date countdown, #13 Word count goal, #12 Keyboard shortcuts | Small |
+| **Sprint 2** | #1 Student notifications, #4 Assignment submission flow | Medium |
+| **Sprint 3** | #5 Student analytics, #9 Bulk actions, #11 Filters | Medium |
+| **Sprint 4** | #2 Inline annotations, #6 Rubric grading | Large |
+| **Sprint 5** | #8 Revision diff, #7 Live preview, #10 Peer review | Large |
+| **Ongoing** | #17-20 Architecture improvements | Incremental |

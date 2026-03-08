@@ -9,13 +9,13 @@ def test_get_submissions_returns_all_submissions():
     try:
         response = requests.get(f"{BASE_URL}/submissions", headers=HEADERS, timeout=TIMEOUT)
     except requests.RequestException as e:
-        assert False, f"Request failed: {e}"
+        raise AssertionError(f"Request failed: {e}")
 
     assert response.status_code == 200, f"Expected status code 200 but got {response.status_code}"
     try:
         submissions = response.json()
     except ValueError:
-        assert False, "Response is not a valid JSON"
+        raise AssertionError("Response is not a valid JSON")
 
     assert isinstance(submissions, list), "Response JSON is not a list"
 

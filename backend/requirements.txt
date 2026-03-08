@@ -1,5 +1,8 @@
+bcrypt
 fastapi
 uvicorn
 pydantic
 sqlalchemy
 python-multipart
+slowapi
+bleach

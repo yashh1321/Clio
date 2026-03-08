@@ -19,14 +19,14 @@ def test_submit_essay_with_invalid_paste_count():
         try:
             response = requests.post(SUBMIT_ENDPOINT, json=payload, headers=headers, timeout=TIMEOUT)
         except requests.RequestException as e:
-            assert False, f"Request failed: {e}"
+            raise AssertionError(f"Request failed: {e}")
 
         # Expecting the API to reject with error, so non 200 status or error message in 200 response
         if response.status_code == 200:
             try:
                 res_json = response.json()
-            except Exception:
-                assert False, "Response is 200 but not valid JSON"
+            except ValueError:
+                raise AssertionError("Response is 200 but not valid JSON")
 
             # If API accepts invalid paste_count and returns success, it is a failure.
             assert False, f"API incorrectly accepted invalid paste_count={paste_count} with message: {res_json.get('message')}"

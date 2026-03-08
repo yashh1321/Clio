@@ -42,6 +42,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 }
+
 :root {
   --radius: 0.625rem;
   --background: #ffffff;
@@ -115,8 +116,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+
+  /* 
+   * Intentional non-standard scaling to match user preference for 80% zoom look.
+   * 'zoom' is primarily supported in WebKit/Blink (Chrome, Edge, Safari) and may not work in Firefox.
+   * Alternatives like 'transform: scale(0.8)' can cause layout/scroll issues on the body.
+   */
   body {
     @apply bg-background text-foreground;
+    zoom: 0.8;
   }
 }
 
@@ -124,13 +132,16 @@
   width: 6px;
   height: 6px;
 }
+
 .glass-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .glass-scroll::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 9999px;
 }
+
 .glass-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }

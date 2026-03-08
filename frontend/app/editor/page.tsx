@@ -1,21 +1,23 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { WebGLShader } from "../../components/ui/web-gl-shader"
+
+import { Modal } from "../../components/ui/modal"
 import { Button } from "../../components/ui/button"
-import { Loader2, CheckCircle, AlertTriangle, Download, Save } from "lucide-react"
+import { Loader2, CheckCircle, AlertTriangle, Download, Save, GraduationCap, BookOpen, Clock, ChevronDown, ChevronUp, AlertCircle } from "lucide-react"
 import { saveAs } from "file-saver"
 import { Document, Packer, Paragraph, TextRun, ImageRun, HeadingLevel } from "docx"
 import RichEditor from "../../components/editor/RichEditor"
 import { type ReplaySnapshot } from "../../components/editor/ReplayTimeline"
 import SpotifyCard from "../../components/ui/spotify-card"
 import { saveToDB, getFromDB, removeFromDB } from "../../lib/db"
+import { ThemeToggle } from "../../components/ui/theme-toggle"
+import { WebGLShader } from "../../components/ui/web-gl-shader"
 
 export default function EditorPage() {
   const router = useRouter()
   // content starts as string, but can be set to JSON object for initialization
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [content, setContent] = useState<any>("")
   const [html, setHtml] = useState("")
   const [json, setJson] = useState<object | null>(null)
@@ -27,16 +29,37 @@ export default function EditorPage() {
   const [subtitle, setSubtitle] = useState("Mid-Term Essay")
   const [subtitleEnabled, setSubtitleEnabled] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
+  const [selectedTeacher, setSelectedTeacher] = useState("")
+  const [teachers, setTeachers] = useState<{ id: string; username: string }[]>([])
+  const [assignments, setAssignments] = useState<{ id: string; title: string; description: string; due_date: string | null; max_word_count: number | null }[]>([])
+  const [selectedAssignment, setSelectedAssignment] = useState("")
+  const [showInstructions, setShowInstructions] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [focusMode, setFocusMode] = useState(false)
   const [lastDocxUrl, setLastDocxUrl] = useState<string | null>(null)
   const [lastPdfUrl, setLastPdfUrl] = useState<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [lastDocxName, setLastDocxName] = useState<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [lastPdfName, setLastPdfName] = useState<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [docxStatus, setDocxStatus] = useState<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [pdfStatus, setPdfStatus] = useState<string | null>(null)
   const [replaySnapshots, setReplaySnapshots] = useState<ReplaySnapshot[]>([])
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean
+    type: "confirm" | "success" | "error" | "loading"
+    title: string
+    message: string
+    onConfirm?: () => void
+  }>({
+    isOpen: false,
+    type: "confirm",
+    title: "",
+    message: ""
+  })
 
   const lastTypingAtRef = useRef<number | null>(null)
   const lastTypingLenRef = useRef(0)
@@ -68,6 +91,11 @@ export default function EditorPage() {
           setContent(savedContent)
         }
 
+        // Always restore html separately so submission never sends blank
+        if (savedHtml) {
+          setHtml(savedHtml)
+        }
+
         if (savedTitle) setTitle(savedTitle)
         if (savedSubtitle) setSubtitle(savedSubtitle)
         if (savedWpm) setWpm(parseInt(savedWpm))
@@ -88,13 +116,52 @@ export default function EditorPage() {
     }).catch(() => { })
   }, [])
 
-  // Auth Check — redirect if not authenticated, but don't block rendering
+  // Fetch available teachers and assignments on mount
   useEffect(() => {
-    const auth = localStorage.getItem("clio_auth")
-    const cookieAuth = document.cookie.split('; ').find(row => row.startsWith('clio_auth='))
-    if (!auth && !cookieAuth) {
-      router.push("/login")
+    async function loadTeachers() {
+      try {
+        const res = await fetch("/api/teachers", { credentials: "include" })
+        if (res.ok) {
+          const data = await res.json()
+          setTeachers(data)
+        }
+      } catch (err) {
+        console.error("Failed to load teachers:", err)
+      }
     }
+    async function loadAssignments() {
+      try {
+        const res = await fetch("/api/assignments", { credentials: "include" })
+        if (res.ok) {
+          const data = await res.json()
+          setAssignments(data)
+        }
+      } catch (err) {
+        console.error("Failed to load assignments:", err)
+      }
+    }
+    loadTeachers()
+    loadAssignments()
+  }, [])
+
+  // Auth + Role Check — only students can access the editor
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/auth/session", { credentials: "include" })
+        if (!res.ok) {
+          router.push("/login")
+          return
+        }
+        const data = await res.json()
+        if (data.role !== "student") {
+          router.push("/dashboard")
+        }
+      } catch {
+        router.push("/login")
+      }
+    }
+    checkAuth()
   }, [router])
 
   // Auto-save logic
@@ -141,11 +208,13 @@ export default function EditorPage() {
     resetStatusAfterDelay("warning")
   }
 
-  const getImageData = async (src: string): Promise<ArrayBuffer | null> => {
+  const getImageData = async (src: string): Promise<{ buffer: ArrayBuffer, mime: string } | null> => {
     try {
       if (!src) return null
       if (src.startsWith('data:')) {
-        const base64 = src.split(',')[1]
+        const parts = src.split(',')
+        const mime = parts[0].split(':')[1].split(';')[0]
+        const base64 = parts[1]
         if (!base64) return null
         const binaryString = window.atob(base64)
         const len = binaryString.length
@@ -153,11 +222,13 @@ export default function EditorPage() {
         for (let i = 0; i < len; i++) {
           bytes[i] = binaryString.charCodeAt(i)
         }
-        return bytes.buffer
+        return { buffer: bytes.buffer, mime }
       }
       const resp = await fetch(src, { mode: 'cors' })
       if (!resp.ok) return null
-      return await resp.arrayBuffer()
+      const mime = resp.headers.get('content-type') || 'image/jpeg'
+      const buffer = await resp.arrayBuffer()
+      return { buffer, mime }
     } catch (e) {
       console.error("Error fetching image data:", e)
       return null
@@ -260,7 +331,7 @@ export default function EditorPage() {
 
           if (tagName === 'img') {
             const src = el.getAttribute('src')
-            if (src && src.startsWith('data:')) {
+            if (src) {
               try {
                 // Extract image dimensions
                 // Smart dimension parsing for PDF (mm)
@@ -329,21 +400,17 @@ export default function EditorPage() {
                   imgWidth = imgWidth * scale
                 }
 
-                checkPageBreak(imgHeight + 5)
+                // Load image data for embedding
+                const imgData = await getImageData(src)
+                if (imgData) {
+                  let format = 'JPEG'
+                  if (imgData.mime.toLowerCase().includes('png')) format = 'PNG'
+                  else if (imgData.mime.toLowerCase().includes('webp')) format = 'WEBP'
 
-                // Auto-detect image format from data URL
-                let imageType = 'JPEG'
-                if (src.startsWith('data:image/png')) {
-                  imageType = 'PNG'
-                } else if (src.startsWith('data:image/webp')) {
-                  // jsPDF typically supports PNG/JPEG/WEBP
-                  imageType = 'WEBP'
+                  pdf.addImage(new Uint8Array(imgData.buffer), format, margin, yPosition, imgWidth, imgHeight)
+                  yPosition += imgHeight + 5
+                  console.log('[PDF Export] Added image to PDF, dimensions:', imgWidth, 'x', imgHeight, 'Format:', format)
                 }
-
-                // Add the image directly from data URL with correct format
-                pdf.addImage(src, imageType, margin, yPosition, imgWidth, imgHeight)
-                yPosition += imgHeight + 5
-                console.log('[PDF Export] Added image to PDF, dimensions:', imgWidth, 'x', imgHeight)
               } catch (err) {
                 console.error('[PDF Export] Failed to add image:', err)
               }
@@ -467,8 +534,9 @@ export default function EditorPage() {
   const buildImageRun = async (imgEl: HTMLElement): Promise<ImageRun | null> => {
     const src = imgEl.getAttribute('src')
     if (!src) return null
-    const buf = await getImageData(src)
-    if (!buf) return null
+    const imgData = await getImageData(src)
+    if (!imgData) return null
+    const buf = imgData.buffer
     const rawW = imgEl.getAttribute('width')
     const rawH = imgEl.getAttribute('height')
     let w = 600
@@ -483,8 +551,6 @@ export default function EditorPage() {
       if (rawH.endsWith('%')) h = 400 * (parseFloat(rawH) / 100)
       else h = parseFloat(rawH) || 400
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    console.log('[DOCX Export] buildImageRun SUCCESS — src:', src.substring(0, 80), '...', 'size:', buf.byteLength, 'w:', w, 'h:', h)
     return new ImageRun({ data: new Uint8Array(buf), transformation: { width: w, height: h } } as any)
   }
 
@@ -577,7 +643,6 @@ export default function EditorPage() {
       }
       if (tagName === 'p' || tagName === 'li') {
         const runs = await processInlineChildren(el)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const opts: any = { children: runs }
         if (tagName === 'li') opts.bullet = { level: 0 }
         return new Paragraph(opts)
@@ -649,35 +714,67 @@ export default function EditorPage() {
       await fetch("/api/auth/logout", { method: "POST" })
       if (typeof window !== "undefined") {
         localStorage.removeItem("spotify_token")
+        localStorage.removeItem("clio_auth")
         sessionStorage.removeItem("spotify_code_verifier")
       }
     } catch { }
     router.push("/login")
   }
 
-  const handleSubmit = async () => {
-    if (!html || html.trim().length === 0) {
-      alert("Please write something before submitting.")
-      return
-    }
-    if (!confirm("Are you sure you want to submit? This will send your essay for review.")) return
+  const handleConfirmSubmit = async () => {
+    setModalState(prev => ({ ...prev, type: "loading", title: "Submitting...", message: "Please wait while we submit your essay." }))
 
     try {
+      const assignmentObj = assignments.find(a => a.id === selectedAssignment)
+      // Use html if available, fall back to string content
+      const essayContent = html && html.trim().length > 0
+        ? html
+        : (typeof content === 'string' ? content : '')
+
+      // ── Thin out replay snapshots to prevent huge payloads ──
+      // Keep at most 200 evenly-spaced snapshots, truncate each HTML to 50KB
+      const MAX_SNAPSHOTS = 200
+      const MAX_HTML_LENGTH = 50_000
+      let trimmedSnapshots = replaySnapshots
+      if (trimmedSnapshots.length > MAX_SNAPSHOTS) {
+        const step = trimmedSnapshots.length / MAX_SNAPSHOTS
+        const sampled: typeof replaySnapshots = []
+        for (let i = 0; i < MAX_SNAPSHOTS; i++) {
+          sampled.push(trimmedSnapshots[Math.floor(i * step)])
+        }
+        // Always include the very last snapshot
+        sampled[sampled.length - 1] = trimmedSnapshots[trimmedSnapshots.length - 1]
+        trimmedSnapshots = sampled
+      }
+      trimmedSnapshots = trimmedSnapshots.map(snap => ({
+        ...snap,
+        html: snap.html && snap.html.length > MAX_HTML_LENGTH
+          ? snap.html.slice(0, MAX_HTML_LENGTH)
+          : snap.html
+      }))
+
       const res = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          assignment_title: title || "Untitled",
-          content: html,
-          replay_snapshots: replaySnapshots,
+          assignment_title: assignmentObj ? assignmentObj.title : (title || "Untitled"),
+          assignment_id: selectedAssignment || undefined,
+          content: essayContent,
+          replay_snapshots: trimmedSnapshots,
           wpm,
           paste_count: pasteCount,
+          teacher_id: selectedTeacher,
         }),
       })
 
       const data = await res.json()
       if (!res.ok) {
-        alert(`Submission failed: ${data.error || "Unknown error"}`)
+        setModalState({
+          isOpen: true,
+          type: "error",
+          title: "Submission Failed",
+          message: data.error || "Unknown error"
+        })
         return
       }
 
@@ -691,26 +788,116 @@ export default function EditorPage() {
       localStorage.removeItem("clio_wpm")
       localStorage.removeItem("clio_pasteCount")
 
-      alert(`✅ Essay submitted successfully!\nIntegrity Score: ${data.score}/100`)
+      setModalState({
+        isOpen: true,
+        type: "success",
+        title: "Submission Successful",
+        message: `✅ Essay submitted successfully!\nIntegrity Score: ${data.score}/100`
+      })
 
       setContent("")
       setHtml("")
       setJson(null)
-      setTitle("Philosophy 101")
-      setSubtitle("Mid-Term Essay")
-      setWpm(0)
-      setPasteCount(0)
-      setStatus("verified")
-      setReplaySnapshots([])
-      activeTypingMsRef.current = 0
-      lastTypingAtRef.current = null
-      lastTypingLenRef.current = 0
-      setStartTime(null)
-    } catch (e) {
-      console.error("Submission error:", e)
-      alert("Network error — please check your connection and try again.")
+    } catch (err: any) {
+      setModalState({
+        isOpen: true,
+        type: "error",
+        title: "Submission Error",
+        message: err.message || "An unexpected error occurred."
+      })
     }
   }
+
+  const handleSubmit = async () => {
+    // Use html if available, otherwise fall back to content (string form)
+    const essayContent = html && html.trim().length > 0
+      ? html
+      : (typeof content === 'string' ? content : '')
+
+    if (!essayContent || essayContent.trim().length === 0) {
+      setModalState({
+        isOpen: true,
+        type: "error",
+        title: "Empty Essay",
+        message: "Please write something before submitting."
+      })
+      return
+    }
+    if (!selectedTeacher) {
+      setModalState({
+        isOpen: true,
+        type: "error",
+        title: "No Teacher Selected",
+        message: "Please select a teacher to submit your essay to."
+      })
+      return
+    }
+    setModalState({
+      isOpen: true,
+      type: "confirm",
+      title: "Confirm Submission",
+      message: "Are you sure you want to submit? This will send your essay for review.",
+      onConfirm: handleConfirmSubmit
+    })
+  }
+
+
+  // ── Keyboard Shortcuts ──
+  const handleSaveDraft = useCallback(async () => {
+    setIsSaving(true)
+    try {
+      if (json) await saveToDB("clio_json", json)
+      await saveToDB("clio_html", html)
+      await saveToDB("clio_content", typeof content === 'string' ? content : '')
+      localStorage.setItem("clio_title", title)
+      localStorage.setItem("clio_subtitle", subtitle)
+      localStorage.setItem("clio_wpm", String(wpm))
+      localStorage.setItem("clio_pasteCount", String(pasteCount))
+    } catch { /* silent */ }
+    setTimeout(() => setIsSaving(false), 400)
+  }, [json, html, content, title, subtitle, wpm, pasteCount])
+
+  const handlersRef = useRef({ handleSaveDraft, handleSubmit, handleExportPdf, handleExportDocx, isExporting, setFocusMode })
+
+  useEffect(() => {
+    handlersRef.current = { handleSaveDraft, handleSubmit, handleExportPdf, handleExportDocx, isExporting, setFocusMode }
+  })
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const ctrl = e.ctrlKey || e.metaKey
+      const h = handlersRef.current
+
+      // Ctrl+S — Save draft
+      if (ctrl && !e.shiftKey && e.key === 's') {
+        e.preventDefault()
+        h.handleSaveDraft()
+      }
+      // Ctrl+Enter — Submit essay
+      if (ctrl && e.key === 'Enter') {
+        e.preventDefault()
+        h.handleSubmit()
+      }
+      // Ctrl+Shift+E — Export PDF
+      if (ctrl && e.shiftKey && e.key === 'e') {
+        e.preventDefault()
+        if (!h.isExporting) h.handleExportPdf()
+      }
+      // Ctrl+Shift+D — Export DOCX
+      if (ctrl && e.shiftKey && e.key === 'd') {
+        e.preventDefault()
+        if (!h.isExporting) h.handleExportDocx()
+      }
+      // Escape — Toggle focus mode
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        h.setFocusMode(v => !v)
+      }
+    }
+
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -721,52 +908,124 @@ export default function EditorPage() {
 
   const contentLength = typeof content === 'string' ? content.length : html.length
 
+  // ── Computed assignment helpers ──
+  const activeAssignment = assignments.find(a => a.id === selectedAssignment)
+  const currentWordCount = (typeof content === 'string' ? content : html).trim().split(/\s+/).filter(Boolean).length
+  const wordLimit = activeAssignment?.max_word_count ?? null
+  const wordLimitRatio = wordLimit ? currentWordCount / wordLimit : 0
+  const isOverLimit = wordLimit ? currentWordCount > wordLimit : false
+  const isNearLimit = wordLimit ? wordLimitRatio >= 0.9 && !isOverLimit : false
+
+  // Due date helpers
+  const dueDate = activeAssignment?.due_date ? new Date(activeAssignment.due_date) : null
+  const nowMs = Date.now()
+  const hoursUntilDue = dueDate ? (dueDate.getTime() - nowMs) / (1000 * 60 * 60) : null
+  const isPastDue = hoursUntilDue !== null && hoursUntilDue < 0
+  const isDueSoon = hoursUntilDue !== null && hoursUntilDue >= 0 && hoursUntilDue <= 24
+
   return (
-    <div className="relative min-h-screen w-full bg-black text-white overflow-hidden font-sans">
+    <div className="relative h-[125vh] w-full flex flex-col bg-background text-foreground overflow-hidden font-sans">
       {/* Background Effect - Reusing the Shader for consistency */}
-      <div className="absolute inset-0 opacity-30 pointer-events-none">
+      <div className="absolute inset-0 opacity-30 pointer-events-none z-0">
         <WebGLShader />
       </div>
 
       {!focusMode ? (
-        <header className="relative z-10 flex items-center justify-between border-b border-white/10 bg-black/50 px-6 py-4 backdrop-blur-md">
+        <header className="relative z-10 flex items-center justify-between border-b border-border bg-background/50 px-6 py-4 backdrop-blur-md">
           <div className="flex items-center gap-4">
             <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600" />
-            <div className="flex flex-col">
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Essay Title"
-                className="text-sm font-bold text-white bg-white/5 border border-white/10 rounded px-2 py-1 backdrop-blur-md focus:outline-none focus:border-white/30"
-              />
-              {subtitleEnabled ? (
+            <div className="flex flex-col gap-1">
+              {/* Assignment Selector */}
+              <select
+                value={selectedAssignment}
+                onChange={(e) => {
+                  setSelectedAssignment(e.target.value)
+                  const a = assignments.find(a => a.id === e.target.value)
+                  if (a) setTitle(a.title)
+                }}
+                className="text-sm font-bold text-foreground bg-accent/20 border border-border rounded px-2 py-1 backdrop-blur-md focus:outline-none focus:border-ring/30 cursor-pointer appearance-none max-w-[260px]"
+              >
+                <option value="" className="bg-background text-foreground">Custom / Unassigned</option>
+                {assignments.map((a) => (
+                  <option key={a.id} value={a.id} className="bg-background text-foreground">
+                    {a.title}{a.due_date ? ` (Due ${new Date(a.due_date).toLocaleDateString()})` : ""}
+                  </option>
+                ))}
+              </select>
+              {/* Custom title or assignment info */}
+              {!selectedAssignment ? (
                 <input
                   type="text"
-                  value={subtitle}
-                  onChange={(e) => setSubtitle(e.target.value)}
-                  placeholder="Subheading"
-                  className="text-xs text-white/80 bg-white/5 border border-white/10 rounded px-2 py-1 backdrop-blur-md focus:outline-none focus:border-white/30"
-                  onBlur={() => { if (!subtitle.trim()) setSubtitleEnabled(false) }}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Essay Title"
+                  className="text-xs text-muted-foreground bg-accent/20 border border-border rounded px-2 py-1 backdrop-blur-md focus:outline-none focus:border-ring/30"
                 />
               ) : (
-                <button
-                  className="text-xs text-white/40 hover:text-white/70"
-                  onClick={() => setSubtitleEnabled(true)}
-                >
-                  + Add subheading
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowInstructions(v => !v)}
+                    className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                  >
+                    <BookOpen className="h-3 w-3" />
+                    {showInstructions ? 'Hide' : 'View'} Instructions
+                    {showInstructions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  </button>
+                  {/* Due date badge */}
+                  {dueDate && (
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${isPastDue ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                      : isDueSoon ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                        : 'bg-green-500/10 text-green-400 border border-green-500/20'
+                      }`}>
+                      <Clock className="h-3 w-3" />
+                      {isPastDue ? 'Past Due' : isDueSoon ? `Due in ${Math.ceil(hoursUntilDue!)}h` : `Due ${dueDate.toLocaleDateString()}`}
+                    </span>
+                  )}
+                  {/* Word limit badge */}
+                  {wordLimit && (
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${isOverLimit ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                      : isNearLimit ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                        : 'bg-white/5 text-white/40 border border-white/10'
+                      }`}>
+                      {currentWordCount.toLocaleString()} / {wordLimit.toLocaleString()}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {/* Teacher Selector */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 px-3 relative"
+              asChild
+            >
+              <div className="flex items-center gap-1.5">
+                <GraduationCap className="h-3.5 w-3.5" />
+                <select
+                  value={selectedTeacher}
+                  onChange={(e) => setSelectedTeacher(e.target.value)}
+                  className="bg-transparent text-xs font-medium text-current focus:outline-none cursor-pointer appearance-none pr-1"
+                >
+                  <option value="" className="bg-background text-foreground">Submit to…</option>
+                  {teachers.map((t) => (
+                    <option key={t.id} value={t.id} className="bg-background text-foreground">
+                      {t.username.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </Button>
             <div className="flex gap-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleExportDocx}
                 disabled={isExporting}
-                className="text-white/70 hover:text-white hover:bg-white/10 h-8 px-2 disabled:opacity-50"
+                title="Export as DOCX (Ctrl+Shift+D)"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 px-2 disabled:opacity-50"
               >
                 {isExporting ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Download className="mr-1 h-3 w-3" />}
                 .docx
@@ -776,23 +1035,24 @@ export default function EditorPage() {
                 size="sm"
                 onClick={handleExportPdf}
                 disabled={isExporting}
-                className="text-white/70 hover:text-white hover:bg-white/10 h-8 px-2 disabled:opacity-50"
+                title="Export as PDF (Ctrl+Shift+E)"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 px-2 disabled:opacity-50"
               >
                 {isExporting ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Download className="mr-1 h-3 w-3" />}
                 .pdf
               </Button>
             </div>
 
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+            <div className="flex items-center gap-2 rounded-full border border-border bg-accent/20 px-3 py-1">
               {isSaving ? (
                 <>
                   <Loader2 className="h-3 w-3 animate-spin text-white/50" />
-                  <span className="text-xs font-medium text-white/50">Saving...</span>
+                  <span className="text-xs font-medium text-muted-foreground">Saving...</span>
                 </>
               ) : (
                 <>
                   <Save className="h-3 w-3 text-white/30" />
-                  <span className="text-xs font-medium text-white/30">Saved</span>
+                  <span className="text-xs font-medium text-muted-foreground">Saved</span>
                 </>
               )}
             </div>
@@ -805,23 +1065,65 @@ export default function EditorPage() {
                 {status === "verified" ? "Integrity Verified" : status === "suspicious" ? "Unusual Speed" : "Integrity Warning"}
               </span>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => setFocusMode(v => !v)} className="text-white/70 hover:text-white hover:bg-white/10 h-8 px-3">
+            <Button id="focus-mode-btn" variant="ghost" size="sm" onClick={() => setFocusMode(v => !v)} className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 px-3">
               {focusMode ? "Exit Focus" : "Focus Mode"}
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white/70 hover:text-white hover:bg-white/10 h-8 px-3">Logout</Button>
-            <Button className="bg-white text-black hover:bg-gray-200" onClick={handleSubmit}>Submit Essay</Button>
+            <Button id="profile-btn" variant="ghost" size="sm" onClick={() => router.push("/profile")} className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 px-3">Profile</Button>
+            <Button id="submissions-btn" variant="ghost" size="sm" onClick={() => router.push("/submissions")} className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 px-3">My Submissions</Button>
+            <Button id="drafts-btn" variant="ghost" size="sm" onClick={() => router.push("/drafts")} className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 px-3">My Drafts</Button>
+            <Button id="logout-btn" variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 px-3">Logout</Button>
+            <ThemeToggle />
+            <Button id="submit-essay-btn" title="Submit Essay (Ctrl+Enter)" className="bg-foreground text-background hover:bg-muted-foreground/20" onClick={handleSubmit}>Submit Essay</Button>
           </div>
         </header>
       ) : null}
 
+      {/* Assignment Instructions Panel */}
+      {showInstructions && activeAssignment && (
+        <div className="relative z-10 border-b border-border bg-accent/10 backdrop-blur-md px-6 py-4 animate-in slide-in-from-top duration-200">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-foreground mb-2">{activeAssignment.title}</h3>
+                {activeAssignment.description && (
+                  <div className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {activeAssignment.description.replace(/<[^>]*>/g, '')}
+                  </div>
+                )}
+                <div className="flex items-center gap-4 mt-3">
+                  {dueDate && (
+                    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${isPastDue ? 'text-red-400' : isDueSoon ? 'text-yellow-400' : 'text-muted-foreground'
+                      }`}>
+                      <Clock className="h-3.5 w-3.5" />
+                      Due: {dueDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at {dueDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                      {isPastDue && <span className="text-red-400 font-semibold ml-1">(Past Due!)</span>}
+                      {isDueSoon && !isPastDue && <span className="text-yellow-400 font-semibold ml-1">(Due Soon)</span>}
+                    </span>
+                  )}
+                  {wordLimit && (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      Word Limit: {wordLimit.toLocaleString()} words
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button onClick={() => setShowInstructions(false)} className="p-1 rounded hover:bg-accent/50 text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                <ChevronUp className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Workspace */}
-      <main className={`relative z-10 flex ${focusMode ? 'h-screen' : 'h-[calc(100vh-73px)]'}`}>
+      <main className="relative z-10 flex flex-1 overflow-hidden min-h-0">
 
         {/* Editor Canvas */}
-        <div className="relative flex-1 overflow-hidden p-8 flex justify-center bg-black/20 backdrop-blur-md border-l border-white/10 min-h-0">
+        <div className="relative flex-1 overflow-hidden flex flex-col bg-background/20 backdrop-blur-md border-l border-border min-h-0">
           {focusMode ? (
             <div className="absolute right-6 top-6 z-20 flex items-center gap-3">
-              <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1" data-integrity-state={status}>
+              <div className="flex items-center gap-2 rounded-full border border-border bg-accent/20 px-3 py-1" data-integrity-state={status}>
                 {status === "verified" && <CheckCircle className="h-4 w-4 text-green-500" />}
                 {status === "warning" && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
                 {status === "suspicious" && <AlertTriangle className="h-4 w-4 text-red-500" />}
@@ -829,8 +1131,8 @@ export default function EditorPage() {
                   {status === "verified" ? "Integrity Verified" : status === "suspicious" ? "Unusual Speed" : "Integrity Warning"}
                 </span>
               </div>
-              <span className="text-xs font-medium text-white/60">Focus Mode Enabled</span>
-              <Button variant="ghost" size="sm" onClick={() => setFocusMode(false)} className="text-white/70 hover:text-white hover:bg-white/10 h-8 px-3">
+              <span className="text-xs font-medium text-muted-foreground">Focus Mode Enabled</span>
+              <Button variant="ghost" size="sm" onClick={() => setFocusMode(false)} className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 px-3">
                 Exit Focus
               </Button>
             </div>
@@ -860,19 +1162,26 @@ export default function EditorPage() {
                   }
                 }
 
-                // ── Real WPM = actual words / active minutes ──
+                // ── Real WPM = (non-space chars / 5) / active minutes ──
+                // Industry-standard: 1 word = 5 characters (letters only).
+                // This prevents spaces / enter from inflating WPM.
                 const activeMinutes = activeTypingMsRef.current / 60000
-                if (activeMinutes > 0.05) { // wait ~3s of active time before showing
-                  const words = text.trim().split(/\s+/).filter(Boolean).length
-                  setWpm(Math.round(words / activeMinutes))
+                if (activeMinutes > 0.16) { // need at least ~10 seconds of active typing
+                  const letterCount = (text.match(/\S/g) || []).length
+                  const computedWpm = Math.round((letterCount / 5) / activeMinutes)
+                  setWpm(Math.min(computedWpm, 300)) // cap at 300 to prevent display glitches
                 }
 
-                // ── Instant-speed integrity check (unchanged) ──
-                if (lastAt && deltaChars > 0) {
-                  const gapMinutes = (now - lastAt) / 60000
-                  if (gapMinutes > 0) {
+                // ── Instant-speed integrity check ──
+                // Only flag truly suspicious bursts: require at least 10 chars
+                // typed in a gap of at least 500ms to avoid noise from
+                // normal fast keystrokes or autocorrect.
+                if (lastAt && deltaChars >= 10) {
+                  const gapMs = now - lastAt
+                  if (gapMs >= 500) {
+                    const gapMinutes = gapMs / 60000
                     const instantWpm = Math.round((deltaChars / 5) / gapMinutes)
-                    if (instantWpm >= 120) {
+                    if (instantWpm >= 200) {
                       resetStatusAfterDelay("suspicious")
                     }
                   }
@@ -887,7 +1196,22 @@ export default function EditorPage() {
               onJsonChange={setJson}
               onSnapshot={(snapshot) => {
                 setReplaySnapshots(prev => {
-                  const next = [...prev, snapshot]
+                  const last = prev[prev.length - 1]
+                  let effectiveTimestamp = snapshot.timestamp
+
+                  // ── Time Compression Logic ──
+                  // If the user was idle for more than 5 seconds, we "compress" the gap
+                  // so the replay doesn't show hours of nothing.
+                  if (last) {
+                    const realGap = snapshot.timestamp - last.timestamp
+                    if (realGap > 5000) {
+                      effectiveTimestamp = last.timestamp + 1000 // Just 1s after the last one
+                    }
+                  }
+
+                  const nextSnapshot = { ...snapshot, timestamp: effectiveTimestamp }
+                  const next = [...prev, nextSnapshot]
+
                   // Persist to IndexedDB (fire and forget)
                   saveToDB("clio_replay_snapshots", next).catch(() => { })
                   return next
@@ -897,50 +1221,86 @@ export default function EditorPage() {
             />
           ) : (
             <div className="flex items-center justify-center h-full w-full">
-              <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           )}
         </div>
 
         {/* Right Sidebar (Analytics) */}
         {!focusMode ? (
-          <aside className="w-80 border-l border-white/10 bg-black/20 p-6 backdrop-blur-md hidden md:block">
-            <h2 className="mb-6 text-xs font-bold uppercase tracking-wider text-white/40">Session Analytics</h2>
-            <p className="mb-4 text-xs text-white/40">Behavioral analytics processed locally</p>
+          <aside className="w-80 border-l border-border bg-background/20 p-6 backdrop-blur-md hidden md:block">
+            <h2 className="mb-6 text-xs font-bold uppercase tracking-wider text-muted-foreground">Session Analytics</h2>
+            <p className="mb-4 text-xs text-muted-foreground">Behavioral analytics processed locally</p>
 
             <div className="space-y-6">
               {/* WPM Card */}
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                <p className="text-xs text-white/50">Typing Speed</p>
+              <div className="rounded-xl border border-border bg-accent/20 p-4">
+                <p className="text-xs text-muted-foreground">Typing Speed</p>
                 <div className="mt-1 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-white">{wpm}</span>
-                  <span className="text-sm text-white/50">WPM</span>
+                  <span className="text-3xl font-bold text-foreground">{wpm}</span>
+                  <span className="text-sm text-muted-foreground">WPM</span>
                 </div>
-                {(wpm > 80 || status === "suspicious") && <p className="mt-2 text-xs text-red-400">⚠️ Unusual Speed</p>}
+                {(wpm > 150 || status === "suspicious") && <p className="mt-2 text-xs text-red-400">⚠️ Unusual Speed</p>}
               </div>
 
               {/* Paste Count Card */}
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                <p className="text-xs text-white/50">Paste Events</p>
+              <div className="rounded-xl border border-border bg-accent/20 p-4">
+                <p className="text-xs text-muted-foreground">Paste Events</p>
                 <div className="mt-1 flex items-baseline gap-1">
-                  <span className={`text-3xl font-bold ${pasteCount > 0 ? 'text-yellow-500' : 'text-white'}`}>
+                  <span className={`text-3xl font-bold ${pasteCount > 0 ? 'text-yellow-500' : 'text-foreground'}`}>
                     {pasteCount}
                   </span>
-                  <span className="text-sm text-white/50">detected</span>
+                  <span className="text-sm text-muted-foreground">detected</span>
                 </div>
               </div>
+
+              {/* Word Count Card with Limit Enforcement */}
+              <div className={`rounded-xl border p-4 transition-colors ${isOverLimit ? 'border-red-500/30 bg-red-500/5'
+                : isNearLimit ? 'border-yellow-500/30 bg-yellow-500/5'
+                  : 'border-border bg-accent/20'
+                }`}>
+                <p className="text-xs text-muted-foreground">Word Count</p>
+                <div className="mt-1 flex items-baseline gap-1">
+                  <span id="word-count-value" className={`text-3xl font-bold ${isOverLimit ? 'text-red-400' : isNearLimit ? 'text-yellow-400' : 'text-foreground'
+                    }`}>
+                    {currentWordCount.toLocaleString()}
+                  </span>
+                  {wordLimit ? (
+                    <span className="text-sm text-muted-foreground">/ {wordLimit.toLocaleString()}</span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">words</span>
+                  )}
+                </div>
+                {wordLimit && (
+                  <>
+                    <div className="mt-2 h-1.5 w-full rounded-full bg-accent/30 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${isOverLimit ? 'bg-red-500' : isNearLimit ? 'bg-yellow-500' : 'bg-blue-500'
+                          }`}
+                        style={{ width: `${Math.min(100, wordLimitRatio * 100)}%` }}
+                      />
+                    </div>
+                    {isOverLimit && (
+                      <p className="mt-1.5 text-[10px] text-red-400 font-medium">⚠ Over limit by {(currentWordCount - wordLimit).toLocaleString()} words</p>
+                    )}
+                    {isNearLimit && (
+                      <p className="mt-1.5 text-[10px] text-yellow-400 font-medium">Approaching word limit ({(wordLimit - currentWordCount).toLocaleString()} remaining)</p>
+                    )}
+                  </>
+                )}
+              </div>
               {contentLength > 2000 ? (
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-xs text-white/50">Performance</p>
-                  <p className="mt-2 text-sm text-white">Editor Performance Test Completed</p>
+                <div className="rounded-xl border border-border bg-accent/20 p-4">
+                  <p className="text-xs text-muted-foreground">Performance</p>
+                  <p className="mt-2 text-sm text-foreground">Editor Performance Test Completed</p>
                 </div>
               ) : null}
 
 
               {/* Integrity Score Visual */}
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                <p className="text-xs text-white/50">Projected Integrity Score</p>
-                <div className="mt-4 h-2 w-full rounded-full bg-white/10">
+              <div className="rounded-xl border border-border bg-accent/20 p-4">
+                <p className="text-xs text-muted-foreground">Projected Integrity Score</p>
+                <div className="mt-4 h-2 w-full rounded-full bg-accent/30">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-500"
                     style={{ width: `${Math.max(0, 100 - (pasteCount * 10))}%` }}
@@ -953,10 +1313,10 @@ export default function EditorPage() {
               <SpotifyCard />
 
               {/* Snapshot indicator (replay is available to teachers) */}
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                <p className="text-xs text-white/50">Session Recording</p>
-                <p className="mt-2 text-sm text-white/80 font-mono">{replaySnapshots.length} <span className="text-white/40 text-xs">snapshots captured</span></p>
-                <p className="mt-1 text-xs text-white/30">Your teacher can watch the writing replay</p>
+              <div className="rounded-xl border border-border bg-accent/20 p-4">
+                <p className="text-xs text-muted-foreground">Session Recording</p>
+                <p className="mt-2 text-sm text-muted-foreground font-mono">{replaySnapshots.length} <span className="text-muted-foreground text-xs">snapshots captured</span></p>
+                <p className="mt-1 text-xs text-muted-foreground">Your teacher can watch the writing replay</p>
               </div>
             </div>
           </aside>
@@ -964,6 +1324,28 @@ export default function EditorPage() {
 
 
       </main>
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+        title={modalState.title}
+        footer={
+          modalState.type === "confirm" ? (
+            <>
+              <Button variant="ghost" onClick={() => setModalState(prev => ({ ...prev, isOpen: false }))}>Cancel</Button>
+              <Button onClick={() => {
+                if (modalState.onConfirm) modalState.onConfirm()
+                // Don't close immediately, let the handler set loading state
+              }}>Confirm</Button>
+            </>
+          ) : modalState.type === "loading" ? (
+            <Button disabled><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</Button>
+          ) : (
+            <Button onClick={() => setModalState(prev => ({ ...prev, isOpen: false }))}>Close</Button>
+          )
+        }
+      >
+        <div className="whitespace-pre-line">{modalState.message}</div>
+      </Modal>
     </div>
   )
 }

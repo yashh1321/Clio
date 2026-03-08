@@ -14,9 +14,13 @@ type ShaderUniforms = {
 export function WebGLShader() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const sceneRef = useRef<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     scene: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     camera: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     renderer: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mesh: any
     uniforms: ShaderUniforms | null
     animationId: number | null
@@ -85,11 +89,11 @@ export function WebGLShader() {
 
       const position = [
         -1.0, -1.0, 0.0,
-         1.0, -1.0, 0.0,
-        -1.0,  1.0, 0.0,
-         1.0, -1.0, 0.0,
-        -1.0,  1.0, 0.0,
-         1.0,  1.0, 0.0,
+        1.0, -1.0, 0.0,
+        -1.0, 1.0, 0.0,
+        1.0, -1.0, 0.0,
+        -1.0, 1.0, 0.0,
+        1.0, 1.0, 0.0,
       ]
 
       const positions = new THREE.BufferAttribute(new Float32Array(position), 3)
@@ -137,6 +141,7 @@ export function WebGLShader() {
         if (refs.mesh.geometry && typeof refs.mesh.geometry.dispose === 'function') {
           refs.mesh.geometry.dispose()
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const m = refs.mesh.material as any
         if (m && typeof m.dispose === 'function') {
           m.dispose()

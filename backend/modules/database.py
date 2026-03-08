@@ -1,5 +1,5 @@
 import sqlite3
-import hashlib
+import bcrypt
 import pandas as pd
 import streamlit as st
 from datetime import datetime
@@ -38,11 +38,13 @@ def init_db():
     # Create Default Users if not exist
     try:
         # Student: student / 123
+        student_hash = bcrypt.hashpw("123".encode(), bcrypt.gensalt()).decode()
         c.execute("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)", 
-                  ("student", hashlib.sha256("123".encode()).hexdigest(), "student"))
+                  ("student", student_hash, "student"))
         # Teacher: teacher / 123
+        teacher_hash = bcrypt.hashpw("123".encode(), bcrypt.gensalt()).decode()
         c.execute("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)", 
-                  ("teacher", hashlib.sha256("123".encode()).hexdigest(), "teacher"))
+                  ("teacher", teacher_hash, "teacher"))
         conn.commit()
     except sqlite3.IntegrityError:
         pass # Users already exist
@@ -57,12 +59,19 @@ def login_user(username, password):
     """Verify credentials and return User object or None."""
     conn = get_connection()
     c = conn.cursor()
-    pwd_hash = hashlib.sha256(password.encode()).hexdigest()
     
-    c.execute("SELECT id, username, role FROM users WHERE username=? AND password_hash=?", (username, pwd_hash))
+    c.execute("SELECT id, username, role, password_hash FROM users WHERE username=?", (username,))
     user = c.fetchone()
     conn.close()
-    return user # (id, username, role)
+    
+    if user is None:
+        return None
+    
+    user_id, uname, role, stored_hash = user
+    # Verify password against bcrypt hash
+    if bcrypt.checkpw(password.encode(), stored_hash.encode()):
+        return (user_id, uname, role)
+    return None
 
 def submit_assignment(student_id, title, content, metrics, score):
     """Save a new assignment submission."""

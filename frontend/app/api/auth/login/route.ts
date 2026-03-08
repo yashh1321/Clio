@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { signToken } from "@/lib/auth"
-
-// ── Demo credentials ───────────────────────────────────────────────────────────
-// In production, replace with a database lookup + bcrypt comparison.
-const VALID_USERS: Record<string, { password: string; role: string }> = {
-    student: { password: "123", role: "student" },
-    teacher: { password: "123", role: "teacher" },
-}
+import { supabase } from "@/lib/supabase"
+import bcrypt from "bcryptjs"
 
 // ── POST /api/auth/login ───────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
@@ -18,8 +13,20 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Username and password are required" }, { status: 400 })
         }
 
-        const user = VALID_USERS[username.toLowerCase()]
-        if (!user || user.password !== password) {
+        // Secure Database authentication check
+        const { data: user, error } = await supabase
+            .from('profiles')
+            .select('password, role')
+            .eq('username', username.toLowerCase())
+            .single()
+
+        if (error || !user || !user.password) {
+            return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
+        }
+
+        // Timing-safe bcrypt comparison
+        const passwordMatch = await bcrypt.compare(password, user.password)
+        if (!passwordMatch) {
             return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
         }
 

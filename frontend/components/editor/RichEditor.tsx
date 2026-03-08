@@ -297,11 +297,12 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
   )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 /**
  * Component for rendering an image that can be resized by the user.
  * Supports dragging for resizing along x, y, or both axes.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ResizableImageComponent = (props: any) => {
   const { node, updateAttributes, selected, deleteNode } = props
   const boxRef = useRef<HTMLDivElement | null>(null)
@@ -561,16 +562,6 @@ export default function RichEditor({
     onUpdate: ({ editor }) => {
       const nextText = editor.getText()
       const now = Date.now()
-      const delta = Math.abs(nextText.length - lastTextLengthRef.current)
-      const lastUpdateAt = lastUpdateAtRef.current
-      const shouldMarkPaste = delta >= 20
-      if (shouldMarkPaste) {
-        const lastPasteAt = lastPasteAtRef.current
-        if (!lastPasteAt || now - lastPasteAt > 600) {
-          onPaste()
-          lastPasteAtRef.current = now
-        }
-      }
       lastTextLengthRef.current = nextText.length
       lastUpdateAtRef.current = now
       onChange(nextText)
@@ -615,7 +606,7 @@ export default function RichEditor({
   }, [editor, onPaste])
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-black/20 border border-white/10 rounded-lg shadow-2xl h-full flex flex-col min-h-0">
+    <div className="w-full h-full flex flex-col min-h-0">
       {showToolbar ? <MenuBar editor={editor} /> : null}
       <div id="editor-export-root" className="flex-1 overflow-y-scroll glass-scroll min-h-0">
         <EditorContent editor={editor} className="min-h-full" data-editor-root="true" />

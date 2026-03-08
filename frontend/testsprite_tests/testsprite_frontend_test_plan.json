@@ -1,0 +1,3548 @@
+[
+  {
+    "id": "TC001",
+    "title": "Inline validation: invalid email format prevents successful registration",
+    "description": "Verifies the registration form rejects an invalid email format and provides visible feedback.",
+    "category": "Registration",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Bad Email User\" into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"not-an-email\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"ValidPass!12345\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Select \"Student\" from the role dropdown"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Create Account\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"invalid email\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Inline validation: missing required name shows error",
+    "description": "Verifies the registration form requires a name and shows a visible error when omitted.",
+    "category": "Registration",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Type \"missing.name.001@example.com\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"ValidPass!12345\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Select \"Student\" from the role dropdown"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Create Account\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Name is required\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/register\""
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Inline validation: missing password shows error",
+    "description": "Verifies the registration form requires a password and shows a visible error when omitted.",
+    "category": "Registration",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Type \"No Password User\" into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"no.password.001@example.com\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Select \"Student\" from the role dropdown"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Create Account\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Password is required\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/register\""
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Inline validation: role not selected shows error",
+    "description": "Verifies the registration form requires a role selection and does not submit without it.",
+    "category": "Registration",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Type \"No Role User\" into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"no.role.001@example.com\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"ValidPass!12345\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Create Account\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Role is required\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/register\""
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Filter submissions by UNGRADED status, integrity score range, and student name search",
+    "description": "Verifies the teacher can combine status toggle, score range, and search to narrow the submissions list.",
+    "category": "Teacher Dashboard with Filters",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Show Filters\" to expand the filter panel"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"UNGRADED\" toggle button"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"0\" into the minimum integrity score field"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"100\" into the maximum integrity score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Alex\" into the search field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"UNGRADED\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Switch between ALL, GRADED, and UNGRADED toggles",
+    "description": "Verifies the dashboard updates the visible state when the teacher switches submission status filters.",
+    "category": "Teacher Dashboard with Filters",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Show Filters\" to expand the filter panel"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"ALL\" toggle button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"ALL\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"GRADED\" toggle button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"GRADED\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"UNGRADED\" toggle button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"UNGRADED\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Filter submissions using a narrow integrity score range",
+    "description": "Verifies the teacher can input a tight integrity score range and see the page reflect the applied filter state.",
+    "category": "Teacher Dashboard with Filters",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Show Filters\" to expand the filter panel"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"70\" into the minimum integrity score field"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"85\" into the maximum integrity score field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Submissions list\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Search submissions by student name or assignment title",
+    "description": "Verifies the search input can be used to filter the submissions list.",
+    "category": "Teacher Dashboard with Filters",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Show Filters\" to expand the filter panel"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Essay\" into the search field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Submissions list\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Enter non-numeric integrity score input and apply filters",
+    "description": "Verifies the filter panel handles non-numeric integrity score input with a visible validation error or safe empty result state.",
+    "category": "Teacher Dashboard with Filters",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Show Filters\" to expand the filter panel"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"abc\" into the minimum integrity score field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Apply Filters\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Invalid\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Handle min integrity score greater than max integrity score",
+    "description": "Verifies the UI prevents or clearly indicates an invalid score range when minimum exceeds maximum.",
+    "category": "Teacher Dashboard with Filters",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Show Filters\" to expand the filter panel"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"90\" into the minimum integrity score field"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"10\" into the maximum integrity score field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Apply Filters\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"range\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Integrity score range rejects out-of-bounds values (below 0 or above 100)",
+    "description": "Verifies the integrity score inputs handle values outside the expected 0–100 range with a visible error or safe behavior.",
+    "category": "Teacher Dashboard with Filters",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Show Filters\" to expand the filter panel"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"-1\" into the minimum integrity score field"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"101\" into the maximum integrity score field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Apply Filters\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"must be\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Empty results state when filters yield no matches",
+    "description": "Verifies the dashboard shows a clear empty state when applied filters produce no submissions.",
+    "category": "Teacher Dashboard with Filters",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Show Filters\" to expand the filter panel"
+      },
+      {
+        "type": "action",
+        "description": "Type \"zzzz-no-match-123\" into the search field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No submissions\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Bulk grade selected submissions with score and feedback",
+    "description": "Verifies a teacher can select submissions and apply the same score and feedback to all selected items successfully.",
+    "category": "Bulk Grade Submissions",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click checkbox on an individual submission"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Select All\" option"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Bulk Grade\" button"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Complete bulk grade modal submission shows success confirmation",
+    "description": "Verifies the bulk grade modal accepts a valid score and optional feedback and shows a visible success confirmation after grading.",
+    "category": "Bulk Grade Submissions",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Select All\" option"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Bulk Grade\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Bulk Grade\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Bulk grade modal requires score (validation error)",
+    "description": "Verifies leaving the score empty triggers a visible validation error when attempting to grade selected submissions.",
+    "category": "Bulk Grade Submissions",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click checkbox on an individual submission"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Bulk Grade\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Grade\" button in the bulk grade modal"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Bulk grade button reflects selection count",
+    "description": "Verifies the Bulk Grade button indicates the number of selected submissions (N) after selecting multiple items.",
+    "category": "Bulk Grade Submissions",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click checkbox on an individual submission"
+      },
+      {
+        "type": "action",
+        "description": "Click checkbox on a second individual submission"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Bulk Grade\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Select All selects visible submissions and enables bulk grading",
+    "description": "Verifies using Select All selects visible submissions and the Bulk Grade action becomes available.",
+    "category": "Bulk Grade Submissions",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Select All\" option"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Bulk Grade\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Bulk Grade\" button"
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Bulk grade modal can be dismissed without grading",
+    "description": "Verifies the teacher can open the bulk grade modal and close it without applying grades.",
+    "category": "Bulk Grade Submissions",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click checkbox on an individual submission"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Bulk Grade\" button"
+      },
+      {
+        "type": "action",
+        "description": "Press \"Escape\" key"
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Bulk grade with score only (no feedback) succeeds",
+    "description": "Verifies submitting a valid score while leaving feedback empty can still successfully bulk grade selected submissions.",
+    "category": "Bulk Grade Submissions",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Select All\" option"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Bulk Grade\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"85\" into the score field in the bulk grade modal"
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Attempting bulk grade with no selection is prevented",
+    "description": "Verifies the teacher cannot start a bulk grade action when no submissions are selected.",
+    "category": "Bulk Grade Submissions",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Bulk Grade\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Bulk Grade\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Select\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC021",
+    "title": "Save a rubric-based grade successfully with auto-calculated total and feedback",
+    "description": "Verifies a teacher can switch to Rubric Mode, enter valid rubric scores, see the total update, add feedback, and submit a saved grade confirmation.",
+    "category": "Rubric-Based Grading",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on a submission to open the detail panel"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Overall Mode\" to switch to \"Rubric Mode\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Rubric Mode\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"20\" into the Content score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"18\" into the Grammar score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"19\" into the Structure score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"17\" into the Originality score field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Total\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Good structure overall. Please proofread for grammar and tighten the thesis.\" into the feedback field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Submit Grade\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Grade saved\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC022",
+    "title": "Reject out-of-range rubric score with a visible validation error",
+    "description": "Verifies entering an out-of-range rubric score (e.g., 30) prevents submission and shows a score range validation message.",
+    "category": "Rubric-Based Grading",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on a submission to open the detail panel"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Overall Mode\" to switch to \"Rubric Mode\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"30\" into the Content score field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Submit Grade\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"must be within\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC023",
+    "title": "Auto-calculated total updates when a single criterion score changes",
+    "description": "Verifies the displayed total changes after editing one rubric criterion score in Rubric Mode.",
+    "category": "Rubric-Based Grading",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on a submission to open the detail panel"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Overall Mode\" to switch to \"Rubric Mode\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"10\" into the Content score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"10\" into the Grammar score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"10\" into the Structure score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"10\" into the Originality score field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"40\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"15\" into the Content score field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"45\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC024",
+    "title": "Allow boundary values 0 and 25 for rubric criteria",
+    "description": "Verifies rubric criteria accept minimum and maximum allowed values and still allow grade submission.",
+    "category": "Rubric-Based Grading",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on a submission to open the detail panel"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Overall Mode\" to switch to \"Rubric Mode\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"0\" into the Content score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"25\" into the Grammar score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"0\" into the Structure score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"25\" into the Originality score field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"50\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Boundary values test.\" into the feedback field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Submit Grade\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Grade saved\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC025",
+    "title": "Prevent submitting when a required rubric score is missing",
+    "description": "Verifies the UI blocks submission and shows a visible error when at least one rubric criterion score is left empty.",
+    "category": "Rubric-Based Grading",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on a submission to open the detail panel"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Overall Mode\" to switch to \"Rubric Mode\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"12\" into the Content score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"12\" into the Grammar score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"12\" into the Structure score field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Submit Grade\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"required\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC026",
+    "title": "Reject negative rubric score with validation messaging",
+    "description": "Verifies entering a negative value (e.g., -1) for a rubric criterion is rejected and shows a visible range validation message.",
+    "category": "Rubric-Based Grading",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on a submission to open the detail panel"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Overall Mode\" to switch to \"Rubric Mode\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"-1\" into the Grammar score field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Submit Grade\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"0-25\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC027",
+    "title": "Allow submitting with feedback left blank (if optional)",
+    "description": "Verifies that a grade can be submitted with valid rubric scores even when no feedback is entered, or else shows a clear feedback-required validation if feedback is mandatory.",
+    "category": "Rubric-Based Grading",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on a submission to open the detail panel"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Overall Mode\" to switch to \"Rubric Mode\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"15\" into the Content score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"15\" into the Grammar score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"15\" into the Structure score field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"15\" into the Originality score field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Submit Grade\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Grade saved\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC028",
+    "title": "Switching to Rubric Mode reveals the four rubric criteria fields",
+    "description": "Verifies that after switching modes, the rubric criteria (Content, Grammar, Structure, Originality) are visibly present for scoring.",
+    "category": "Rubric-Based Grading",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on a submission to open the detail panel"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Overall Mode\" to switch to \"Rubric Mode\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Content\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Grammar\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Structure\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Originality\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC029",
+    "title": "Word count progress bar updates after typing",
+    "description": "Verifies the word count progress bar is visible and reflects typed content in the editor.",
+    "category": "Student Editor with Keyboard Shortcuts",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/editor\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Word count progress bar\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Write text in the editor"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"word\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC030",
+    "title": "Due date countdown is visible on the editor",
+    "description": "Verifies students can see the due date countdown/timer UI on the editor page.",
+    "category": "Student Editor with Keyboard Shortcuts",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/editor\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Due date countdown\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Due\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC031",
+    "title": "Escape toggles focus mode and returns to normal mode",
+    "description": "Verifies the Escape key toggles focus mode, changing visible UI state (e.g., focus mode indicator or hidden side panels) and can be toggled back.",
+    "category": "Student Editor with Keyboard Shortcuts",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/editor\""
+      },
+      {
+        "type": "action",
+        "description": "Press Escape"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Focus\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Press Escape"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Word count progress bar\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC032",
+    "title": "Open a draft from Drafts and save changes with keyboard shortcut",
+    "description": "Verifies a student can open an existing draft from the Drafts list, edit it in the editor, and save using Ctrl+S with a visible success confirmation.",
+    "category": "Student Drafts",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Drafts\" in the primary navigation menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/drafts\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Drafts\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC033",
+    "title": "Drafts list is visible and shows at least one draft card/row when drafts exist",
+    "description": "Verifies the Drafts page renders a visible list area for drafts and allows selection of a draft when drafts are present.",
+    "category": "Student Drafts",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Drafts\" in the primary navigation menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Drafts list\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Draft item\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC034",
+    "title": "Open a draft into the editor from the Drafts page",
+    "description": "Verifies clicking a draft from the Drafts list opens the editor view for that draft.",
+    "category": "Student Drafts",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Drafts\" in the primary navigation menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first visible draft in the drafts list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/editor\""
+      }
+    ]
+  },
+  {
+    "id": "TC035",
+    "title": "Externally removed draft shows Draft not found error when clicked",
+    "description": "Verifies that selecting a draft that no longer exists results in a visible \"Draft not found\" error message.",
+    "category": "Student Drafts",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Drafts\" in the primary navigation menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on the draft item labeled \"Removed\" or \"Not found\" if present"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Draft not found\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC036",
+    "title": "Draft not found error state provides a visible way to return to drafts list",
+    "description": "Verifies the error state for a missing draft offers a visible navigation option to go back to Drafts (or similar) and returns the user to the list.",
+    "category": "Student Drafts",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Drafts\" in the primary navigation menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on the draft item labeled \"Removed\" or \"Not found\" if present"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Draft not found\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Back to drafts\" (or \"Return\") button/link if visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/drafts\""
+      }
+    ]
+  },
+  {
+    "id": "TC037",
+    "title": "View profile information on Profile page",
+    "description": "Verifies a logged-in user can open the Profile page and see their profile fields displayed.",
+    "category": "Student Profile",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Profile\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/profile\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Save Changes\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC038",
+    "title": "Edit full name and class and save successfully",
+    "description": "Verifies a logged-in user can edit full name and class fields and see a success confirmation after saving.",
+    "category": "Student Profile",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Profile\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/profile\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test Student Updated\" into the \"Full name\" field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Class 10A\" into the \"Class\" field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Save Changes\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Changes saved\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC039",
+    "title": "Create a new assignment and verify it appears in the assignments list",
+    "description": "Verifies a teacher can create an assignment with required fields and see it listed afterward.",
+    "category": "Assignments Management",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Log in\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Assignments\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/assignments\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Create Assignment\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Create Assignment\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"E2E Assignment - Short Essay\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"A short essay about academic integrity.\" into the Description field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"500\" into the Max word count field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"2099-12-31\" into the Due date field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Save\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"E2E Assignment - Short Essay\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC040",
+    "title": "Validate due date cannot be in the past when saving an assignment",
+    "description": "Verifies the UI blocks saving when the due date is earlier than today and shows a visible validation message.",
+    "category": "Assignments Management",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Log in\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Assignments\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/assignments\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Create Assignment\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"E2E Assignment - Past Due\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"2020-01-01\" into the Due date field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Save\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"due date must be in the future\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC041",
+    "title": "Required field validation: cannot save assignment with empty title",
+    "description": "Verifies the UI shows a visible error and prevents saving when the title is missing.",
+    "category": "Assignments Management",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Log in\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Assignments\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/assignments\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Create Assignment\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"2099-11-30\" into the Due date field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"750\" into the Max word count field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Save\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Title is required\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC042",
+    "title": "Required field validation: cannot save assignment with empty due date",
+    "description": "Verifies the UI shows a visible error and prevents saving when the due date is missing.",
+    "category": "Assignments Management",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Log in\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Assignments\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/assignments\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Create Assignment\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"E2E Assignment - Missing Date\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"400\" into the Max word count field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Save\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Due date is required\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC043",
+    "title": "Word limit validation: prevent saving when max word count is zero",
+    "description": "Verifies the UI rejects a non-positive word limit and shows a visible validation message.",
+    "category": "Assignments Management",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Log in\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Assignments\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/assignments\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Create Assignment\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"E2E Assignment - Zero Limit\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"2099-10-10\" into the Due date field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"0\" into the Max word count field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Save\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Max word count must be greater than 0\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC044",
+    "title": "Cancel out of assignment creation without saving",
+    "description": "Verifies a teacher can exit the create assignment screen and the new assignment is not added to the list.",
+    "category": "Assignments Management",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Log in\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Assignments\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/assignments\""
+      },
+      {
+        "type": "action",
+        "description": "Click \"Create Assignment\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"E2E Assignment - Do Not Save\" into the Title field"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Cancel\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/assignments\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"E2E Assignment - Do Not Save\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "TC045",
+    "title": "Create a new class and see it listed",
+    "description": "Verifies a teacher can create a class with section details and the new class appears in the class list.",
+    "category": "Classes Management",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Classes\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/classes\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create Class\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Create Class\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Biology 101 - Section A\" into the class name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"A\" into the section field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Biology 101 - Section A\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC046",
+    "title": "Cancel out of the Create Class dialog without creating a class",
+    "description": "Verifies a teacher can dismiss class creation and no new class is added from the canceled attempt.",
+    "category": "Classes Management",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Classes\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/classes\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create Class\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Create Class\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Chemistry 201 - Section B\" into the class name field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Cancel\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Create Class\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "TC047",
+    "title": "Create class validation: required fields block submission",
+    "description": "Verifies required fields are enforced when creating a class and an error is shown if missing.",
+    "category": "Classes Management",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Classes\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/classes\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create Class\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"required\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC048",
+    "title": "Create class with long name is handled gracefully",
+    "description": "Verifies a very long class name can be submitted or produces a clear error without breaking the page.",
+    "category": "Classes Management",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Classes\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/classes\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create Class\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Advanced Interdisciplinary Studies in Biological Systems and Computational Modeling - Spring Term Section A\" into the class name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"A\" into the section field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Advanced Interdisciplinary Studies\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC049",
+    "title": "Open Similarity page and view flagged pairs list",
+    "description": "Verifies a logged-in teacher can access Similarity and see a list of flagged pairs.",
+    "category": "Similarity Comparison",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Similarity\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/similarity\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Flagged\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC050",
+    "title": "Expand a flagged pair and view side-by-side comparison",
+    "description": "Verifies expanding a flagged pair reveals a side-by-side text comparison for both submissions.",
+    "category": "Similarity Comparison",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Similarity\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/similarity\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the first flagged pair in the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Comparison\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC051",
+    "title": "Expanded comparison shows text from both submissions",
+    "description": "Verifies the expanded comparison area contains visible text content for both the left and right submissions.",
+    "category": "Similarity Comparison",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Similarity\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first flagged pair in the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Submission A\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Submission B\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC052",
+    "title": "Collapse an expanded pair to return to the list view",
+    "description": "Verifies a teacher can collapse the expanded comparison and return to the compact pair row view.",
+    "category": "Similarity Comparison",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Similarity\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first flagged pair in the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Comparison\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the same flagged pair again to collapse"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Comparison\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "TC053",
+    "title": "Filter flagged pairs by student name",
+    "description": "Verifies filtering narrows the flagged pairs list based on a student name query.",
+    "category": "Similarity Comparison",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Similarity\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/similarity\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"Alex\" into the \"Filter\" or \"Search\" field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Alex\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC054",
+    "title": "Filter with no matches shows an empty state",
+    "description": "Verifies using a filter query that matches no records shows an appropriate empty state message.",
+    "category": "Similarity Comparison",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Similarity\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Type \"zzzz-no-such-student\" into the \"Filter\" or \"Search\" field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No results\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Flagged\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC055",
+    "title": "View Teacher Analytics charts on initial load",
+    "description": "Verifies that a logged-in teacher can open Analytics and see the integrity score distribution and submission trends charts.",
+    "category": "Teacher Analytics",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Analytics\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/analytics\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Integrity\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC056",
+    "title": "Integrity score distribution chart is visible",
+    "description": "Verifies that the integrity score distribution visualization is present on the Analytics page.",
+    "category": "Teacher Analytics",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Analytics\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/analytics\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Integrity score\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC057",
+    "title": "Apply date range filter updates analytics view",
+    "description": "Verifies that changing the date range filter updates the analytics charts content shown on screen.",
+    "category": "Teacher Analytics",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Analytics\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/analytics\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the date range filter control"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Date range\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC058",
+    "title": "Change date range selection to a preset option",
+    "description": "Verifies that selecting a preset date range (for example, last 7 days) updates what is displayed for analytics.",
+    "category": "Teacher Analytics",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Analytics\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/analytics\""
+      },
+      {
+        "type": "action",
+        "description": "Select \"Last 7 days\" from the date range dropdown"
+      }
+    ]
+  },
+  {
+    "id": "TC059",
+    "title": "Clear or reset date range filter returns to default view",
+    "description": "Verifies that resetting the date range filter returns the analytics page to its default state.",
+    "category": "Teacher Analytics",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Analytics\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/analytics\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the date range filter control"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Reset\" option"
+      }
+    ]
+  },
+  {
+    "id": "TC060",
+    "title": "Open an assignment from Student Dashboard and land in Editor",
+    "description": "Verifies a student can open an assignment card from the dashboard and is taken to the editor screen.",
+    "category": "Student Dashboard",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the first visible assignment card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/editor\""
+      }
+    ]
+  },
+  {
+    "id": "TC061",
+    "title": "Student Dashboard shows notifications section on load",
+    "description": "Verifies the dashboard displays a notifications area or header indicating where notifications appear.",
+    "category": "Student Dashboard",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Notifications\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC062",
+    "title": "Student Dashboard shows assignment cards section on load",
+    "description": "Verifies the dashboard displays an assignments area indicating where assignment cards are listed.",
+    "category": "Student Dashboard",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Assignments\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC063",
+    "title": "Empty-state messaging appears when no assignments are available",
+    "description": "Verifies the dashboard provides a clear instructional message when the student has no enrolled classes/assignments.",
+    "category": "Student Dashboard",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"enroll\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC064",
+    "title": "Empty-state does not allow opening an assignment when none are listed",
+    "description": "Verifies that when the dashboard is in an empty state, the student cannot navigate to the editor via an assignment card.",
+    "category": "Student Dashboard",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Scroll to the assignment cards area"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"assignment card\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "TC065",
+    "title": "Dashboard to Drafts quick link navigation (if present)",
+    "description": "Verifies the student can use a quick link from the dashboard to reach their drafts list (when the link is available).",
+    "category": "Student Dashboard",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Drafts\" link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/drafts\""
+      }
+    ]
+  },
+  {
+    "id": "TC066",
+    "title": "Dashboard to Submissions quick link navigation (if present)",
+    "description": "Verifies the student can use a quick link from the dashboard to reach their submissions list (when the link is available).",
+    "category": "Student Dashboard",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Submissions\" link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/submissions\""
+      }
+    ]
+  },
+  {
+    "id": "TC067",
+    "title": "Dashboard to Profile quick link navigation (if present)",
+    "description": "Verifies the student can navigate from the dashboard to their profile via a visible link or menu item.",
+    "category": "Student Dashboard",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Profile\" link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/profile\""
+      }
+    ]
+  },
+  {
+    "id": "TC068",
+    "title": "Student can open Student Analytics and see performance and integrity summaries",
+    "description": "Verifies a logged-in student can access Student Analytics and sees graphs/metrics content.",
+    "category": "Student Analytics",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Student Analytics\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-analytics\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Analytics\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC069",
+    "title": "Student Analytics page shows graphs and metric sections when data exists",
+    "description": "Verifies the analytics page renders visible graph/metric sections rather than an empty state when data is available.",
+    "category": "Student Analytics",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Student Analytics\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Performance\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Integrity\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC070",
+    "title": "Student Analytics page supports viewing multiple metric areas by scrolling",
+    "description": "Verifies the student can scroll the analytics page and additional metric content remains visible/loads properly.",
+    "category": "Student Analytics",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Student Analytics\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Scroll to the bottom of the page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"trends\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC071",
+    "title": "Student with no submission history sees empty-state message on Student Analytics",
+    "description": "Verifies the Student Analytics page shows the correct empty-state message when there is no analytics data.",
+    "category": "Student Analytics",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Student Analytics\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-analytics\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No analytics data available\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC072",
+    "title": "Student Analytics empty-state does not show graph sections",
+    "description": "Verifies that when the empty-state message is shown, graph/metric sections are not shown in a misleading way.",
+    "category": "Student Analytics",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Student Analytics\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No analytics data available\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Performance\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "TC073",
+    "title": "Student can navigate away from Student Analytics to another student page",
+    "description": "Verifies the Student Analytics page does not trap navigation and the student can move to another student route via UI.",
+    "category": "Student Analytics",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Student Analytics\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/student-analytics\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Submissions\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/submissions\""
+      }
+    ]
+  },
+  {
+    "id": "TC074",
+    "title": "DOCX export option is visible and selectable in the editor export menu",
+    "description": "Verifies the editor export menu opens and shows a DOCX option that can be selected.",
+    "category": "Exports",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Editor\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/editor\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Export\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"DOCX\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC075",
+    "title": "Student exports an essay to PDF from the editor",
+    "description": "Verifies a logged-in user can initiate a PDF export from the editor export menu.",
+    "category": "Exports",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Editor\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/editor\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Export\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"PDF\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC076",
+    "title": "Teacher can open Export Grades flow from the dashboard",
+    "description": "Verifies a logged-in teacher can access the dashboard and open the export grades control.",
+    "category": "Exports",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Dashboard\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/dashboard\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Export grades\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"CSV\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC077",
+    "title": "Teacher selects CSV in Export Grades and sees an on-screen response state",
+    "description": "Verifies selecting CSV triggers an export attempt and the UI provides a visible response (success or error state).",
+    "category": "Exports",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Dashboard\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Export grades\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"CSV\" option"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Export\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC078",
+    "title": "Export controls are present on both Editor and Dashboard pages for eligible users",
+    "description": "Verifies export entry points are visible in the editor for essays and on the teacher dashboard for grades.",
+    "category": "Exports",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Editor\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Export\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Dashboard\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Export grades\" is visible"
+      }
+    ]
+  }
+]

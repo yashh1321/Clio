@@ -1,0 +1,168 @@
+# University Features for Clio
+
+Adding features that make Clio a complete university-grade academic integrity platform. Prioritized by impact.
+
+---
+
+## Proposed Changes
+
+### Feature 1: Student Submissions History Page
+
+Students currently submit essays but have **no way to see their grades or feedback**. This is the #1 missing feature.
+
+#### [NEW] [page.tsx](file:///c:/mini%20project/clio/frontend/app/submissions/page.tsx)
+
+New `/submissions` page for students:
+- Auth guard: only students can access
+- Fetches the student's own submissions from `/api/submissions/mine`
+- Displays a list of past submissions with: title, date, integrity score, grade (if graded), feedback
+- Click to expand and read the full essay + detailed integrity report
+- Visual indicators: grade badge, "Pending" / "Graded" status
+
+#### [NEW] [route.ts](file:///c:/mini%20project/clio/frontend/app/api/submissions/mine/route.ts)
+
+New `GET /api/submissions/mine` API route:
+- Auth: student only
+- Queries Supabase [submissions](file:///c:/mini%20project/clio/backend/main.py#136-144) table filtered by `student_id`
+- Joins `grades` table to include grade/feedback if present
+- Returns submissions ordered by `submitted_at` descending
+
+#### [MODIFY] [page.tsx](file:///c:/mini%20project/clio/frontend/app/editor/page.tsx)
+
+Add a "My Submissions" link/button in the editor header, so students can navigate to `/submissions`.
+
+---
+
+### Feature 2: Microsoft Outlook SSO for Students
+
+Students will sign in with their **university Outlook / Microsoft 365 account**. This guarantees:
+- Only students with a valid institutional email can access the platform
+- No duplicate accounts (tied to university identity)
+- Zero-friction onboarding (no manual registration)
+
+Teachers continue using the existing username/password login.
+
+#### Dependencies
+
+- `next-auth` (Auth.js v5) — Microsoft/Azure AD provider
+- Requires Azure AD App Registration (tenant ID, client ID, client secret)
+
+#### [NEW] [route.ts](file:///c:/mini%20project/clio/frontend/app/api/auth/microsoft/route.ts)
+
+Microsoft OAuth callback handler:
+- Receives the OAuth code from Microsoft after student signs in
+- Exchanges for access token, extracts email + display name
+- **Auto-creates** a student profile in Supabase `profiles` on first login (username = email prefix, role = "student")
+- Issues the existing HMAC session cookie (same as password login) for seamless compatibility
+- Redirects to `/editor`
+
+#### [NEW] [route.ts](file:///c:/mini%20project/clio/frontend/app/api/auth/microsoft/callback/route.ts)
+
+Handles the OAuth2 redirect from Microsoft, exchanges auth code for token.
+
+#### [MODIFY] [page.tsx](file:///c:/mini%20project/clio/frontend/app/login/page.tsx)
+
+Add a **"Sign in with University Email"** (Microsoft) button below the existing login form. The existing username/password form stays for teachers.
+
+> [!NOTE]
+> You will need to provide your **Azure AD / Microsoft Entra ID** credentials:
+> - `MICROSOFT_CLIENT_ID`
+> - `MICROSOFT_CLIENT_SECRET`
+> - `MICROSOFT_TENANT_ID` (use your university's tenant, or `common` for any Microsoft account)
+>
+> These go in `.env.local`. I'll create the code infrastructure and prompt you for the values.
+
+---
+
+### Feature 3: Assignment Creator (Teacher)
+
+Teachers should create structured assignments with instructions and deadlines, instead of letting students type free-form titles.
+
+#### Supabase Migration — `assignments` table
+
+New `assignments` table:
+
+| Column | Type | Notes |
+|---|---|---|
+| [id](file:///c:/mini%20project/clio/backend/main.py#30-52) | UUID PK | Auto-generated |
+| `teacher_id` | UUID FK→profiles | Creator |
+| `title` | TEXT | Assignment name |
+| `description` | TEXT | Instructions / prompt |
+| `due_date` | TIMESTAMPTZ | Deadline (nullable) |
+| `max_word_count` | INTEGER | Optional word limit |
+| `created_at` | TIMESTAMPTZ | Default now() |
+
+Also add `assignment_id` (UUID FK→assignments, nullable) to [submissions](file:///c:/mini%20project/clio/backend/main.py#136-144) table. The existing `assignment_title` remains for backward compatibility.
+
+#### [NEW] [page.tsx](file:///c:/mini%20project/clio/frontend/app/assignments/page.tsx)
+
+New `/assignments` page (teacher view):
+- List all assignments created by this teacher
+- Create new assignment: title, description (rich text or plain), optional due date, optional word limit
+- Edit/delete existing assignments
+- Shows submission count per assignment
+
+#### [NEW] [route.ts](file:///c:/mini%20project/clio/frontend/app/api/assignments/route.ts)
+
+New CRUD API for assignments:
+- `GET /api/assignments` — list assignments (teacher: own, student: all available)
+- `POST /api/assignments` — create (teacher only)
+- `PUT /api/assignments` — update (teacher only, own assignments)
+- `DELETE /api/assignments` — delete (teacher only, own assignments)
+
+#### [MODIFY] [page.tsx](file:///c:/mini%20project/clio/frontend/app/editor/page.tsx)
+
+Replace the free-text title input with an assignment selector dropdown:
+- Fetches available assignments from `/api/assignments`
+- Student picks an assignment → title, description, word limit auto-populate
+- Still allows custom title as fallback for unassigned work
+- Submission POSTs `assignment_id` alongside `assignment_title`
+
+#### [MODIFY] [route.ts](file:///c:/mini%20project/clio/frontend/app/api/submissions/route.ts)
+
+Accept optional `assignment_id` in POST body. If provided, validate it exists and store it.
+
+#### [MODIFY] [page.tsx](file:///c:/mini%20project/clio/frontend/app/dashboard/page.tsx)
+
+Add "Assignments" link in header. Group submissions by assignment (using `assignment_id` instead of text-matching on title).
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Registration open to all:** The registration page as designed lets anyone register as either student or teacher. Should I add any restrictions (e.g., teacher accounts require admin approval, university email domain validation)?
+
+> [!IMPORTANT]
+> **Assignment enforcement:** Should students be *required* to select an assignment, or should free-form titles still be allowed alongside assignment-linked submissions?
+
+---
+
+## Verification Plan
+
+### Browser Testing
+
+Since there are no existing automated tests in this project, verification will be through the browser:
+
+1. **Registration Flow:**
+   - Navigate to `/register` → fill form → submit → verify redirect to `/login`
+   - Try logging in with new account → verify correct role routing
+   - Try registering duplicate username → verify error message
+
+2. **Student Submissions History:**
+   - Log in as student → submit an essay → navigate to `/submissions`
+   - Verify the submitted essay appears with score and "Pending" status
+   - Log in as teacher → grade the essay → log back in as student
+   - Verify `/submissions` now shows the grade and feedback
+
+3. **Assignment Creator:**
+   - Log in as teacher → navigate to `/assignments` → create a new assignment
+   - Log in as student → open editor → verify assignment appears in dropdown
+   - Submit essay linked to assignment → verify it shows in teacher dashboard grouped by assignment
+
+### Manual Verification (by you)
+
+After I implement each feature, I'll ask you to:
+- Test the registration against your Supabase instance
+- Verify that the Supabase migrations applied correctly
+- Confirm the UI feels right for a university context

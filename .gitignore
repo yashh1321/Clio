@@ -1,0 +1,45 @@
+# dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# databases
+*.db
+*.sqlite
+*.sqlite3
+
+# environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.pem
+
+# testing and logs
+.coverage
+htmlcov/
+testsprite_tests/tmp/
+.testsprite/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# next.js
+.next/
+out/
+build/
+
+# temporary and data files
+large_payload.json
+test_*.json
+cookies.txt
+
+# OS generated
+.DS_Store
+Thumbs.db

@@ -13,7 +13,16 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const body = await req.json()
+        // Parallelize: profile lookup + body parsing (independent)
+        const [{ data: teacher, error: tErr }, body] = await Promise.all([
+            supabase.from("profiles").select("id").eq("username", session.username).single(),
+            req.json(),
+        ])
+
+        if (tErr || !teacher) {
+            return NextResponse.json({ error: "Teacher profile not found" }, { status: 404 })
+        }
+
         const { submission_id, score, feedback } = body as {
             submission_id?: string
             score?: number
@@ -25,17 +34,6 @@ export async function POST(req: NextRequest) {
         }
         if (score === undefined || score < 0 || score > 100) {
             return NextResponse.json({ error: "score must be 0–100" }, { status: 400 })
-        }
-
-        // Lookup teacher profile ID
-        const { data: teacher, error: tErr } = await supabase
-            .from("profiles")
-            .select("id")
-            .eq("username", session.username)
-            .single()
-
-        if (tErr || !teacher) {
-            return NextResponse.json({ error: "Teacher profile not found" }, { status: 404 })
         }
 
         // Upsert grade (one grade per submission)
@@ -69,7 +67,9 @@ export async function GET(req: NextRequest) {
     const token = req.cookies.get("clio_session")?.value
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const session = verifyToken(token)
-    if (!session) return NextResponse.json({ error: "Invalid session" }, { status: 401 })
+    if (!session || session.role !== "teacher") {
+        return NextResponse.json({ error: "Forbidden — teachers only" }, { status: 403 })
+    }
 
     const submissionId = req.nextUrl.searchParams.get("submission_id")
     if (!submissionId) {

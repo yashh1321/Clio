@@ -1,4 +1,17 @@
-export async function POST(req: Request) {
+import { NextRequest, NextResponse } from 'next/server'
+import { verifyToken } from '@/lib/auth'
+
+export async function POST(req: NextRequest) {
+  // Auth check — only logged-in users can exchange Spotify tokens
+  const token = req.cookies.get('clio_session')?.value
+  if (!token) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } })
+  }
+  const session = verifyToken(token)
+  if (!session) {
+    return new Response(JSON.stringify({ error: 'invalid_session' }), { status: 401, headers: { 'Content-Type': 'application/json' } })
+  }
+
   try {
     const { code, code_verifier, redirect_uri, client_id } = await req.json()
     const clientId = (client_id as string | undefined) || (process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID as string | undefined)
@@ -31,7 +44,7 @@ export async function POST(req: Request) {
       status: resp.status,
       headers: { 'Content-Type': 'application/json' },
     })
-  } catch (e) {
+  } catch {
     return new Response(JSON.stringify({ error: 'unknown_error' }), { status: 500, headers: { 'Content-Type': 'application/json' } })
   }
 }

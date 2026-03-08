@@ -17,7 +17,7 @@ def test_submit_essay_with_invalid_wpm():
     try:
         response = requests.post(url, json=payload, headers=HEADERS, timeout=TIMEOUT)
     except requests.RequestException as e:
-        assert False, f"Request failed: {e}"
+        raise AssertionError(f"Request failed: {e}")
 
     # The API should reject invalid wpm or return an error indicating invalid typing speed.
 
@@ -26,8 +26,8 @@ def test_submit_essay_with_invalid_wpm():
         resp_json = {}
         try:
             resp_json = response.json()
-        except Exception:
-            assert False, "Response is not valid JSON"
+        except ValueError:
+            raise AssertionError("Response is not valid JSON")
 
         # Check for message indicating invalid typing speed or a rejection message
         message = resp_json.get("message", "").lower()
