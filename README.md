@@ -9,6 +9,8 @@
   [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
   [![FastAPI](https://img.shields.io/badge/FastAPI-Middleware-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](http://makeapullrequest.com)
 </div>
 
 ---
@@ -123,3 +125,6 @@ Clio uses a secure, modern monolithic architecture with strict JWT-based Role-Ba
 <div align="center">
   <i>Built with ‚ù§Ô∏è for modern education.</i>
 </div>
+
+## Ì¥ù Contributing
+We welcome contributions from the open-source community! Please see our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) for details on how to set up the project locally out of Docker and how to submit a Pull Request.
