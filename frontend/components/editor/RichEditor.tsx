@@ -472,6 +472,7 @@ export default function RichEditor({
   onPaste,
   onHtmlChange,
   onJsonChange,
+  onSnapshot,
   showToolbar = true
 }: {
   content: string | object,
@@ -479,10 +480,12 @@ export default function RichEditor({
   onPaste: () => void,
   onHtmlChange?: (html: string) => void,
   onJsonChange?: (json: object) => void,
+  onSnapshot?: (snapshot: { timestamp: number; html: string; textLength: number }) => void,
   showToolbar?: boolean
 }) {
   const lastTextLengthRef = useRef(0)
   const lastUpdateAtRef = useRef<number | null>(null)
+  const lastSnapshotAtRef = useRef<number>(0)
   const lastPasteAtRef = useRef<number | null>(null)
   const editor = useEditor({
     extensions: [
@@ -573,6 +576,11 @@ export default function RichEditor({
       onChange(nextText)
       onHtmlChange?.(editor.getHTML())
       onJsonChange?.(editor.getJSON())
+      // Emit snapshot for Time Travel Replay (throttle to every 500ms)
+      if (onSnapshot && (now - lastSnapshotAtRef.current > 500)) {
+        lastSnapshotAtRef.current = now
+        onSnapshot({ timestamp: now, html: editor.getHTML(), textLength: nextText.length })
+      }
     },
   })
 

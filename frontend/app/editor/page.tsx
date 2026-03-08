@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { WebGLShader } from "../../components/ui/web-gl-shader"
 import { Button } from "../../components/ui/button"
@@ -8,6 +8,7 @@ import { Loader2, CheckCircle, AlertTriangle, Download, Save } from "lucide-reac
 import { saveAs } from "file-saver"
 import { Document, Packer, Paragraph, TextRun, ImageRun, HeadingLevel } from "docx"
 import RichEditor from "../../components/editor/RichEditor"
+import { type ReplaySnapshot } from "../../components/editor/ReplayTimeline"
 import SpotifyCard from "../../components/ui/spotify-card"
 import { saveToDB, getFromDB, removeFromDB } from "../../lib/db"
 
@@ -35,9 +36,13 @@ export default function EditorPage() {
   const [lastPdfName, setLastPdfName] = useState<string | null>(null)
   const [docxStatus, setDocxStatus] = useState<string | null>(null)
   const [pdfStatus, setPdfStatus] = useState<string | null>(null)
+  const [replaySnapshots, setReplaySnapshots] = useState<ReplaySnapshot[]>([])
+
   const lastTypingAtRef = useRef<number | null>(null)
   const lastTypingLenRef = useRef(0)
   const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const activeTypingMsRef = useRef(0)   // total milliseconds of active typing
+  const IDLE_THRESHOLD_MS = 5000        // gaps longer than 5s are considered idle
 
   // Load persistence data on mount
   useEffect(() => {
@@ -76,6 +81,11 @@ export default function EditorPage() {
     // Add a timeout fallback so the spinner never hangs forever
     const timeout = setTimeout(() => setIsLoaded(true), 3000)
     loadData().finally(() => clearTimeout(timeout))
+
+    // Load replay snapshots
+    getFromDB("clio_replay_snapshots").then((saved) => {
+      if (saved && Array.isArray(saved)) setReplaySnapshots(saved)
+    }).catch(() => { })
   }, [])
 
   // Auth Check — redirect if not authenticated, but don't block rendering
@@ -176,18 +186,263 @@ export default function EditorPage() {
     try {
       setIsExporting(true)
       setPdfStatus(null)
-      const { blob, fileName } = await buildDocxFromState()
-      const fd = new FormData()
-      fd.append('file', blob, `${fileName}.docx`)
-      const resp = await fetch('/api/convert-docx-to-pdf', { method: 'POST', body: fd })
-      if (!resp.ok) throw new Error('conversion_failed')
-      const pdfBlob = await resp.blob()
+
+      const sub = subtitleEnabled && subtitle.trim() ? ` (${subtitle.trim()})` : ''
+      const fileName = (`${title || 'essay'}${sub}`).trim().replace(/[^a-z0-9\- _().]/gi, '_') || 'essay'
+
+      // Get the live editor HTML
+      let editorHtmlContent = html
+      const editorEl = document.querySelector('#editor-export-root .ProseMirror')
+      if (editorEl) {
+        editorHtmlContent = editorEl.innerHTML
+      }
+
+      if (!editorHtmlContent) {
+        alert('No content to export.')
+        return
+      }
+
+      // Dynamically import jspdf (client-side only)
+      const { default: jsPDF } = await import('jspdf')
+
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const margin = 20
+      const maxWidth = pageWidth - (margin * 2)
+      let yPosition = margin
+
+      // Helper to check if we need a new page
+      const checkPageBreak = (neededHeight: number) => {
+        if (yPosition + neededHeight > pageHeight - margin) {
+          pdf.addPage()
+          yPosition = margin
+        }
+      }
+
+      // Add title
+      pdf.setFontSize(18)
+      pdf.setFont('helvetica', 'bold')
+      const titleLines = pdf.splitTextToSize(title || 'Essay', maxWidth)
+      checkPageBreak(titleLines.length * 7)
+      pdf.text(titleLines, margin, yPosition)
+      yPosition += titleLines.length * 7 + 4
+
+      // Add subtitle
+      if (subtitleEnabled && subtitle) {
+        pdf.setFontSize(14)
+        pdf.setFont('helvetica', 'normal')
+        const subtitleLines = pdf.splitTextToSize(subtitle, maxWidth)
+        checkPageBreak(subtitleLines.length * 6)
+        pdf.text(subtitleLines, margin, yPosition)
+        yPosition += subtitleLines.length * 6 + 8
+      }
+
+      // Parse the editor content
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(editorHtmlContent, 'text/html')
+
+      // Process all content nodes
+      const processNode = async (node: Node, indentOffset = 0) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const text = node.textContent?.trim()
+          if (text) {
+            pdf.setFontSize(12)
+            pdf.setFont('helvetica', 'normal')
+            const lines = pdf.splitTextToSize(text, maxWidth - indentOffset)
+            checkPageBreak(lines.length * 5)
+            pdf.text(lines, margin + indentOffset, yPosition)
+            yPosition += lines.length * 5
+          }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          const el = node as HTMLElement
+          const tagName = el.tagName.toLowerCase()
+
+          if (tagName === 'img') {
+            const src = el.getAttribute('src')
+            if (src && src.startsWith('data:')) {
+              try {
+                // Extract image dimensions
+                // Smart dimension parsing for PDF (mm)
+                // 1px = 0.264583 mm
+                const parsePdfDim = (val: string | null, maxMm: number): number => {
+                  if (!val) return 0
+                  if (val.trim().endsWith('%')) {
+                    return (parseFloat(val) / 100) * maxMm
+                  }
+                  // Assume px if no unit or px unit
+                  return (parseFloat(val) || 0) * 0.264583
+                }
+
+                let imgWidth = parsePdfDim(el.getAttribute('width'), maxWidth)
+                let imgHeight = parsePdfDim(el.getAttribute('height'), pageHeight)
+
+                // Use natural dimensions for aspect ratio if explicit sizes are missing
+                // Load image to get real natural dimensions (DOMParser elements don't load resources)
+                let natW = 600
+                let natH = 400
+                try {
+                  const img = new Image()
+                  img.src = src
+                  await new Promise<void>((resolve) => {
+                    if (img.complete) resolve()
+                    else {
+                      img.onload = () => resolve()
+                      img.onerror = () => resolve()
+                    }
+                  })
+                  if (img.naturalWidth > 0) {
+                    natW = img.naturalWidth
+                    natH = img.naturalHeight
+                  }
+                } catch (e) {
+                  console.warn("Failed to load image dimensions", e)
+                }
+                const ratio = natH / natW
+
+                if (!imgWidth && !imgHeight) {
+                  // No attributes? Use natural size (converted to mm)
+                  imgWidth = natW * 0.264583
+                  imgHeight = natH * 0.264583
+                } else if (imgWidth && !imgHeight) {
+                  // Width set, calc height
+                  imgHeight = imgWidth * ratio
+                } else if (!imgWidth && imgHeight) {
+                  // Height set, calc width
+                  imgWidth = imgHeight / ratio
+                }
+
+                // Calculate scaled dimensions to fit page
+                // Dimensions are now already in mm
+
+                // Scale down if too wide
+                if (imgWidth > maxWidth - indentOffset) {
+                  const scale = (maxWidth - indentOffset) / imgWidth
+                  imgWidth = maxWidth - indentOffset
+                  imgHeight = imgHeight * scale
+                }
+
+                // Scale down if too tall for page
+                if (imgHeight > pageHeight - margin * 2) {
+                  const scale = (pageHeight - margin * 2) / imgHeight
+                  imgHeight = pageHeight - margin * 2
+                  imgWidth = imgWidth * scale
+                }
+
+                checkPageBreak(imgHeight + 5)
+
+                // Auto-detect image format from data URL
+                let imageType = 'JPEG'
+                if (src.startsWith('data:image/png')) {
+                  imageType = 'PNG'
+                } else if (src.startsWith('data:image/webp')) {
+                  // jsPDF typically supports PNG/JPEG/WEBP
+                  imageType = 'WEBP'
+                }
+
+                // Add the image directly from data URL with correct format
+                pdf.addImage(src, imageType, margin, yPosition, imgWidth, imgHeight)
+                yPosition += imgHeight + 5
+                console.log('[PDF Export] Added image to PDF, dimensions:', imgWidth, 'x', imgHeight)
+              } catch (err) {
+                console.error('[PDF Export] Failed to add image:', err)
+              }
+            }
+          } else if (tagName === 'li') {
+            // Collect text content for the list item itself (excluding nested lists)
+            let liText = ''
+            const collectText = (n: Node) => {
+              if (n.nodeType === Node.TEXT_NODE) liText += n.textContent
+              else if (n.nodeType === Node.ELEMENT_NODE) {
+                const t = (n as HTMLElement).tagName.toLowerCase()
+                if (t !== 'ul' && t !== 'ol') {
+                  n.childNodes.forEach(collectText)
+                }
+              }
+            }
+            collectText(el)
+            const text = liText.trim()
+
+            if (text) {
+              const parentTag = el.parentElement?.tagName.toLowerCase()
+              const isOrdered = parentTag === 'ol' // Simplified check
+
+              // For nested lists, we might want to know our index in the parent
+              const index = Array.from(el.parentElement?.children || []).filter(c => c.tagName.toLowerCase() === 'li').indexOf(el) + 1
+              const bullet = isOrdered ? `${index}.` : '•'
+
+              pdf.setFontSize(12)
+              pdf.setFont('helvetica', 'normal')
+
+              // Indent list content
+              const bulletX = margin + indentOffset
+              const textX = margin + indentOffset + 6
+              const textMaxWidth = maxWidth - indentOffset - 6
+
+              const lines = pdf.splitTextToSize(text, textMaxWidth)
+              checkPageBreak(lines.length * 5 + 2)
+
+              // Draw bullet/number
+              pdf.text(bullet, bulletX, yPosition)
+              // Draw text indented
+              pdf.text(lines, textX, yPosition)
+
+              yPosition += lines.length * 5 + 2
+            }
+
+            // Recursively process nested lists (ul/ol)
+            for (const child of Array.from(el.children)) {
+              const t = child.tagName.toLowerCase()
+              if (t === 'ul' || t === 'ol') {
+                await processNode(child, indentOffset + 8)
+              }
+            }
+          } else if (tagName === 'p') {
+            const text = el.textContent?.trim()
+            if (text) {
+              pdf.setFontSize(12)
+              pdf.setFont('helvetica', 'normal')
+              const lines = pdf.splitTextToSize(text, maxWidth - indentOffset)
+              checkPageBreak(lines.length * 5 + 3)
+              pdf.text(lines, margin + indentOffset, yPosition)
+              yPosition += lines.length * 5 + 3
+            }
+          } else if (tagName.match(/^h[1-6]$/)) {
+            const level = parseInt(tagName[1])
+            const text = el.textContent?.trim()
+            if (text) {
+              const fontSize = 18 - (level * 2)
+              pdf.setFontSize(fontSize)
+              pdf.setFont('helvetica', 'bold')
+              const lines = pdf.splitTextToSize(text, maxWidth)
+              checkPageBreak(lines.length * (fontSize * 0.4) + 4)
+              pdf.text(lines, margin, yPosition)
+              yPosition += lines.length * (fontSize * 0.4) + 4
+            }
+          } else {
+            // Recurse into child nodes for other containers
+            for (const child of Array.from(el.childNodes)) {
+              await processNode(child, indentOffset)
+            }
+          }
+        }
+      }
+
+      // Process all body children
+      console.log('[PDF Export] Processing document nodes...')
+      for (const child of Array.from(doc.body.childNodes)) {
+        await processNode(child)
+      }
+
+      const pdfBlob = pdf.output('blob')
       saveAs(pdfBlob, `${fileName}.pdf`)
+
       if (lastPdfUrl) URL.revokeObjectURL(lastPdfUrl)
       const pdfUrl = URL.createObjectURL(pdfBlob)
       setLastPdfUrl(pdfUrl)
       setLastPdfName(fileName)
       setPdfStatus('PDF Generated Successfully')
+      console.log('[PDF Export] PDF generated successfully')
     } catch (e) {
       console.error('PDF Export Error:', e)
       alert('Could not export PDF. Please try again.')
@@ -196,19 +451,116 @@ export default function EditorPage() {
     }
   }
 
+  // Recursively collect all <img> elements from any depth in a DOM subtree
+  const collectAllImages = (el: HTMLElement): HTMLImageElement[] => {
+    const imgs: HTMLImageElement[] = []
+    if (el.tagName.toLowerCase() === 'img') {
+      imgs.push(el as HTMLImageElement)
+    }
+    for (const child of Array.from(el.children)) {
+      imgs.push(...collectAllImages(child as HTMLElement))
+    }
+    return imgs
+  }
+
+  // Build an ImageRun from an <img> element
+  const buildImageRun = async (imgEl: HTMLElement): Promise<ImageRun | null> => {
+    const src = imgEl.getAttribute('src')
+    if (!src) return null
+    const buf = await getImageData(src)
+    if (!buf) return null
+    const rawW = imgEl.getAttribute('width')
+    const rawH = imgEl.getAttribute('height')
+    let w = 600
+    let h = 400
+
+    // Smart parsing for DOCX (pixels)
+    if (rawW) {
+      if (rawW.endsWith('%')) w = 600 * (parseFloat(rawW) / 100)
+      else w = parseFloat(rawW) || 600
+    }
+    if (rawH) {
+      if (rawH.endsWith('%')) h = 400 * (parseFloat(rawH) / 100)
+      else h = parseFloat(rawH) || 400
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    console.log('[DOCX Export] buildImageRun SUCCESS — src:', src.substring(0, 80), '...', 'size:', buf.byteLength, 'w:', w, 'h:', h)
+    return new ImageRun({ data: new Uint8Array(buf), transformation: { width: w, height: h } } as any)
+  }
+
+  // Process inline children (text, bold, italic, images — recursively) into runs
+  const processInlineChildren = async (el: HTMLElement): Promise<(TextRun | ImageRun)[]> => {
+    const runs: (TextRun | ImageRun)[] = []
+    for (const child of Array.from(el.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const text = child.textContent
+        if (text && text.trim()) runs.push(new TextRun(text))
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        const cEl = child as HTMLElement
+        const cTag = cEl.tagName.toLowerCase()
+        if (cTag === 'strong' || cTag === 'b') {
+          runs.push(new TextRun({ text: cEl.textContent || '', bold: true }))
+        } else if (cTag === 'em' || cTag === 'i') {
+          runs.push(new TextRun({ text: cEl.textContent || '', italics: true }))
+        } else if (cTag === 'br') {
+          runs.push(new TextRun({ text: '\n' }))
+        } else if (cTag === 'img') {
+          const imgRun = await buildImageRun(cEl)
+          if (imgRun) runs.push(imgRun)
+        } else {
+          // Recurse into spans, divs, or any other inline wrapper
+          const nestedImgs = collectAllImages(cEl)
+          if (nestedImgs.length > 0) {
+            for (const img of nestedImgs) {
+              const imgRun = await buildImageRun(img)
+              if (imgRun) runs.push(imgRun)
+            }
+          } else if (cEl.textContent?.trim()) {
+            runs.push(new TextRun(cEl.textContent || ''))
+          }
+        }
+      }
+    }
+    return runs
+  }
+
   async function buildDocxFromState(): Promise<{ blob: Blob; fileName: string }> {
     const sub = subtitleEnabled && subtitle.trim() ? ` (${subtitle.trim()})` : ''
     const fileName = (`${title || 'essay'}${sub}`).trim().replace(/[^a-z0-9\- _().]/gi, '_') || 'essay'
 
-    // If we have HTML, use it (it's the source of truth for formatting/images)
-    if (!html) {
-      // Fallback to text content
+    // Get HTML from the LIVE editor DOM — this is the most reliable source.
+    // The `html` React state can be stale or empty (e.g. when JSON was restored on mount
+    // but no user edit has triggered `onUpdate` yet).
+    let exportHtml = html
+    const editorEl = document.querySelector('#editor-export-root .ProseMirror')
+    if (editorEl) {
+      exportHtml = editorEl.innerHTML
+      console.log('[DOCX Export] Using live editor DOM innerHTML, length:', exportHtml.length)
+    } else {
+      console.log('[DOCX Export] Editor element not found, using html state, length:', exportHtml?.length || 0)
+    }
+
+    console.log('[DOCX Export] html preview:', exportHtml?.substring(0, 300))
+
+    if (!exportHtml) {
+      console.warn('[DOCX Export] No HTML available, falling back to text content')
       const textContent = typeof content === 'string' ? content : "Essay Content"
       const doc = new Document({ sections: [{ children: [new Paragraph({ children: [new TextRun(textContent)] })] }] })
       return { blob: await Packer.toBlob(doc), fileName }
     }
     const parser = new DOMParser()
-    const docHtml = parser.parseFromString(html, 'text/html')
+    const docHtml = parser.parseFromString(exportHtml, 'text/html')
+
+    // Debug: count all images in the parsed HTML
+    const allImgs = docHtml.querySelectorAll('img')
+    console.log('[DOCX Export] Found', allImgs.length, 'img tags in parsed HTML')
+    allImgs.forEach((img, i) => {
+      console.log(`[DOCX Export] img[${i}] src:`, img.getAttribute('src')?.substring(0, 80), 'width:', img.getAttribute('width'), 'height:', img.getAttribute('height'))
+    })
+
+    // Debug: log top-level children
+    console.log('[DOCX Export] Top-level body children:', Array.from(docHtml.body.childNodes).map(n => (n as HTMLElement).tagName || n.nodeType))
+
     const createParagraph = async (el: HTMLElement): Promise<Paragraph | null> => {
       const tagName = el.tagName.toLowerCase()
       if (tagName.match(/^h[1-6]$/)) {
@@ -223,54 +575,40 @@ export default function EditorPage() {
                 : HeadingLevel.HEADING_1,
         })
       }
-      if (tagName === 'p' || tagName === 'div' || tagName === 'li') {
-        const runs: (TextRun | ImageRun)[] = []
-        for (const child of Array.from(el.childNodes)) {
-          if (child.nodeType === Node.TEXT_NODE) {
-            const text = child.textContent
-            if (text) runs.push(new TextRun(text))
-          } else if (child.nodeType === Node.ELEMENT_NODE) {
-            const cEl = child as HTMLElement
-            const cTag = cEl.tagName.toLowerCase()
-            if (cTag === 'strong' || cTag === 'b') {
-              runs.push(new TextRun({ text: cEl.textContent || '', bold: true }))
-            } else if (cTag === 'em' || cTag === 'i') {
-              runs.push(new TextRun({ text: cEl.textContent || '', italics: true }))
-            } else if (cTag === 'br') {
-              runs.push(new TextRun({ text: '\n' }))
-            } else if (cTag === 'img') {
-              const src = cEl.getAttribute('src')
-              if (src) {
-                const buf = await getImageData(src)
-                if (buf) {
-                  const w = parseInt(cEl.getAttribute('width') || '0') || 600
-                  const h = parseInt(cEl.getAttribute('height') || '0') || 400
-                  runs.push(new ImageRun({ data: new Uint8Array(buf), transformation: { width: w, height: h } } as any))
-                }
-              }
-            } else {
-              runs.push(new TextRun(cEl.textContent || ''))
-            }
-          }
-        }
+      if (tagName === 'p' || tagName === 'li') {
+        const runs = await processInlineChildren(el)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const opts: any = { children: runs }
         if (tagName === 'li') opts.bullet = { level: 0 }
         return new Paragraph(opts)
       }
       if (tagName === 'img') {
-        const src = el.getAttribute('src')
-        if (src) {
-          const buf = await getImageData(src)
-          if (buf) {
-            const w = parseInt(el.getAttribute('width') || '0') || 600
-            const h = parseInt(el.getAttribute('height') || '0') || 400
-            return new Paragraph({ children: [new ImageRun({ data: new Uint8Array(buf), transformation: { width: w, height: h } } as any)] })
+        const imgRun = await buildImageRun(el)
+        if (imgRun) return new Paragraph({ children: [imgRun] })
+      }
+      // For any <div> — check if it contains images (Tiptap NodeView wrappers)
+      if (tagName === 'div') {
+        const imgs = collectAllImages(el)
+        if (imgs.length > 0) {
+          // Image wrapper div — emit each image as its own paragraph
+          const imgRuns: ImageRun[] = []
+          for (const img of imgs) {
+            const imgRun = await buildImageRun(img)
+            if (imgRun) imgRuns.push(imgRun)
           }
+          if (imgRuns.length > 0) {
+            return new Paragraph({ children: imgRuns })
+          }
+        }
+        // Regular div with text content — process inline children
+        const runs = await processInlineChildren(el)
+        if (runs.length > 0) {
+          return new Paragraph({ children: runs })
         }
       }
       return null
     }
+
     const processNodes = async (nodes: NodeListOf<ChildNode>): Promise<Paragraph[]> => {
       const paragraphs: Paragraph[] = []
       for (const node of Array.from(nodes)) {
@@ -281,11 +619,20 @@ export default function EditorPage() {
           paragraphs.push(...await processNodes(el.childNodes))
         } else {
           const p = await createParagraph(el)
-          if (p) paragraphs.push(p)
+          if (p) {
+            paragraphs.push(p)
+          } else {
+            // If createParagraph returned null for a container, recurse into children
+            // This handles deeply nested Tiptap NodeView wrappers
+            if (el.children.length > 0) {
+              paragraphs.push(...await processNodes(el.childNodes))
+            }
+          }
         }
       }
       return paragraphs
     }
+
     const children: Paragraph[] = []
     children.push(new Paragraph({ text: title, heading: HeadingLevel.HEADING_1 }))
     if (subtitleEnabled && subtitle) {
@@ -296,12 +643,12 @@ export default function EditorPage() {
     return { blob: await Packer.toBlob(doc), fileName }
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
+      // Clear server-side session cookie
+      await fetch("/api/auth/logout", { method: "POST" })
       if (typeof window !== "undefined") {
         localStorage.removeItem("spotify_token")
-        localStorage.removeItem("clio_auth")
-        document.cookie = "clio_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
         sessionStorage.removeItem("spotify_code_verifier")
       }
     } catch { }
@@ -309,29 +656,59 @@ export default function EditorPage() {
   }
 
   const handleSubmit = async () => {
-    if (confirm("Are you sure you want to submit? This will clear your current progress.")) {
-      try {
-        await removeFromDB("clio_json")
-        await removeFromDB("clio_html")
-        await removeFromDB("clio_content")
-        localStorage.removeItem("clio_title")
-        localStorage.removeItem("clio_subtitle")
-        localStorage.removeItem("clio_wpm")
-        localStorage.removeItem("clio_pasteCount")
+    if (!html || html.trim().length === 0) {
+      alert("Please write something before submitting.")
+      return
+    }
+    if (!confirm("Are you sure you want to submit? This will send your essay for review.")) return
 
-        alert("Essay Submitted Successfully!")
+    try {
+      const res = await fetch("/api/submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assignment_title: title || "Untitled",
+          content: html,
+          replay_snapshots: replaySnapshots,
+          wpm,
+          paste_count: pasteCount,
+        }),
+      })
 
-        setContent("")
-        setHtml("")
-        setJson(null)
-        setTitle("Philosophy 101")
-        setSubtitle("Mid-Term Essay")
-        setWpm(0)
-        setPasteCount(0)
-        setStatus("verified")
-      } catch (e) {
-        console.error("Error clearing DB:", e)
+      const data = await res.json()
+      if (!res.ok) {
+        alert(`Submission failed: ${data.error || "Unknown error"}`)
+        return
       }
+
+      // Clear local persistence
+      await removeFromDB("clio_json")
+      await removeFromDB("clio_html")
+      await removeFromDB("clio_content")
+      await removeFromDB("clio_replay_snapshots")
+      localStorage.removeItem("clio_title")
+      localStorage.removeItem("clio_subtitle")
+      localStorage.removeItem("clio_wpm")
+      localStorage.removeItem("clio_pasteCount")
+
+      alert(`✅ Essay submitted successfully!\nIntegrity Score: ${data.score}/100`)
+
+      setContent("")
+      setHtml("")
+      setJson(null)
+      setTitle("Philosophy 101")
+      setSubtitle("Mid-Term Essay")
+      setWpm(0)
+      setPasteCount(0)
+      setStatus("verified")
+      setReplaySnapshots([])
+      activeTypingMsRef.current = 0
+      lastTypingAtRef.current = null
+      lastTypingLenRef.current = 0
+      setStartTime(null)
+    } catch (e) {
+      console.error("Submission error:", e)
+      alert("Network error — please check your connection and try again.")
     }
   }
 
@@ -463,29 +840,44 @@ export default function EditorPage() {
               content={content}
               onChange={(text) => {
                 const now = Date.now()
-                let start = startTime
-                if (!start && text.length > 0) {
+
+                // Record session start
+                if (!startTime && text.length > 0) {
                   setStartTime(now)
-                  start = now
                 }
-                if (start) {
-                  const minutes = (now - start) / 60000
-                  if (minutes > 0) {
-                    setWpm(Math.round((text.length / 5) / minutes))
-                  }
-                }
+
                 const lastAt = lastTypingAtRef.current
                 const lastLen = lastTypingLenRef.current
                 const deltaChars = Math.max(0, text.length - lastLen)
+
+                // ── Active typing time tracking ──
+                // Only count the time since the last keystroke if the gap
+                // is shorter than IDLE_THRESHOLD_MS (user was actively typing).
                 if (lastAt && deltaChars > 0) {
-                  const minutes = (now - lastAt) / 60000
-                  if (minutes > 0) {
-                    const instantWpm = Math.round((deltaChars / 5) / minutes)
+                  const gap = now - lastAt
+                  if (gap < IDLE_THRESHOLD_MS) {
+                    activeTypingMsRef.current += gap
+                  }
+                }
+
+                // ── Real WPM = actual words / active minutes ──
+                const activeMinutes = activeTypingMsRef.current / 60000
+                if (activeMinutes > 0.05) { // wait ~3s of active time before showing
+                  const words = text.trim().split(/\s+/).filter(Boolean).length
+                  setWpm(Math.round(words / activeMinutes))
+                }
+
+                // ── Instant-speed integrity check (unchanged) ──
+                if (lastAt && deltaChars > 0) {
+                  const gapMinutes = (now - lastAt) / 60000
+                  if (gapMinutes > 0) {
+                    const instantWpm = Math.round((deltaChars / 5) / gapMinutes)
                     if (instantWpm >= 120) {
                       resetStatusAfterDelay("suspicious")
                     }
                   }
                 }
+
                 lastTypingAtRef.current = now
                 lastTypingLenRef.current = text.length
                 setContent(text)
@@ -493,6 +885,14 @@ export default function EditorPage() {
               onPaste={handlePaste}
               onHtmlChange={setHtml}
               onJsonChange={setJson}
+              onSnapshot={(snapshot) => {
+                setReplaySnapshots(prev => {
+                  const next = [...prev, snapshot]
+                  // Persist to IndexedDB (fire and forget)
+                  saveToDB("clio_replay_snapshots", next).catch(() => { })
+                  return next
+                })
+              }}
               showToolbar={!focusMode}
             />
           ) : (
@@ -535,26 +935,7 @@ export default function EditorPage() {
                   <p className="mt-2 text-sm text-white">Editor Performance Test Completed</p>
                 </div>
               ) : null}
-              {(lastDocxUrl || lastPdfUrl || docxStatus || pdfStatus) ? (
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
-                  <p className="text-xs text-white/50">Exports</p>
-                  {lastDocxUrl && lastDocxName ? (
-                    <a href={`${lastDocxUrl}#${lastDocxName}.docx`} data-href={`${lastDocxUrl}#${lastDocxName}.docx`} download={`${lastDocxName}.docx`} className="block text-xs text-white/80 underline">Latest DOCX</a>
-                  ) : null}
-                  {lastPdfUrl && lastPdfName ? (
-                    <a href={`${lastPdfUrl}#${lastPdfName}.pdf`} data-href={`${lastPdfUrl}#${lastPdfName}.pdf`} download={`${lastPdfName}.pdf`} className="block text-xs text-white/80 underline">Latest PDF</a>
-                  ) : null}
-                  {docxStatus ? (
-                    <div className="text-xs text-white/80">{docxStatus}</div>
-                  ) : null}
-                  {pdfStatus ? (
-                    <div className="text-xs text-white/80 space-y-1">
-                      <div>{pdfStatus}</div>
-                      <div>PDF ready for download</div>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
+
 
               {/* Integrity Score Visual */}
               <div className="rounded-xl border border-white/10 bg-white/5 p-4">
@@ -570,9 +951,18 @@ export default function EditorPage() {
                 </p>
               </div>
               <SpotifyCard />
+
+              {/* Snapshot indicator (replay is available to teachers) */}
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs text-white/50">Session Recording</p>
+                <p className="mt-2 text-sm text-white/80 font-mono">{replaySnapshots.length} <span className="text-white/40 text-xs">snapshots captured</span></p>
+                <p className="mt-1 text-xs text-white/30">Your teacher can watch the writing replay</p>
+              </div>
             </div>
           </aside>
         ) : null}
+
+
       </main>
     </div>
   )
