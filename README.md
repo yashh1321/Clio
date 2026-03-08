@@ -15,6 +15,13 @@
 
 ---
 
+## üìö Technical Documentations & Due Diligence
+For technical contributors, investors, and system administrators, please review our comprehensive architecture and compliance standards:
+- [System Architecture & Telemetry Engine](docs/architecture.md)
+- [FERPA Readiness & Security Standards](docs/security_and_compliance.md)
+
+---
+
 ## üåü The Problem & Our Solution
 Traditional editors (MS Word, Google Docs) focus solely on content creation, leaving teachers to rely on reactive, often inaccurate AI-checkers after the fact. 
 
@@ -126,5 +133,5 @@ Clio uses a secure, modern monolithic architecture with strict JWT-based Role-Ba
   <i>Built with ‚ù§Ô∏è for modern education.</i>
 </div>
 
-## Ì¥ù Contributing
+##  Contributing
 We welcome contributions from the open-source community! Please see our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) for details on how to set up the project locally out of Docker and how to submit a Pull Request.
