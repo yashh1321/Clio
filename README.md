@@ -106,7 +106,7 @@ Clio uses a secure, modern monolithic architecture with strict JWT-based Role-Ba
 ## 📸 Screenshots & Demo
 
 ### Demo Video & UI Walkthrough
-![Clio Demo Video](./assets/demo-video.webp)
+![Clio Demo Video](./assets/demo-video.gif)
 
 ### Platform Login
 ![Login Page](./assets/demo-screenshot.png)
