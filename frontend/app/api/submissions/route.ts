@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createSupabaseAdmin } from "@/lib/supabase"
 import { verifyToken } from "@/lib/auth"
 import DOMPurify from 'isomorphic-dompurify'
 
@@ -36,6 +36,7 @@ function checkRateLimit(identifier: string): boolean {
 
 // ── GET /api/submissions — returns all submissions with student usernames ──
 export async function GET(req: NextRequest) {
+    const supabase = createSupabaseAdmin()
     // Verify session (teacher only)
     const token = req.cookies.get("clio_session")?.value
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -100,6 +101,7 @@ export async function GET(req: NextRequest) {
 
 // ── POST /api/submissions — student submits an essay ──
 export async function POST(req: NextRequest) {
+    const supabase = createSupabaseAdmin()
     // Verify session (student only)
     const token = req.cookies.get("clio_session")?.value
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
