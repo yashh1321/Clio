@@ -51,11 +51,12 @@ Traditional editors (MS Word, Google Docs) focus solely on content creation, lea
 
 ## 🏗️ Architecture & Tech Stack
 
-Clio uses a secure, modern monolithic architecture with strict JWT-based Role-Based Access Control (RBAC) and tight PostgreSQL Row Level Security (RLS).
+Clio uses a secure, modern architecture with strict JWT-based Role-Based Access Control (RBAC) and tight PostgreSQL Row Level Security (RLS). The system cleanly separates responsibilities between the core web platform and the artificial intelligence processing layer.
 
-- **Frontend**: Next.js 15 (React 19, App Router) written in TypeScript.
-- **Backend / APIs**: Next.js Serverless API Routes (Node.js) & FastAPI Middleware.
+- **Frontend & Core API**: Next.js 15 (React 19, App Router) handles the UI, authentication, and core CRUD API routes using Serverless functions.
+- **AI/ML Layer (Backend)**: FastAPI specifically handles the embedding generation pipeline, natural language processing, and heavy similarity computations to decouple AI inference from the core web backend.
 - **Database**: Supabase (Remote PostgreSQL) with `pgvector` integrations.
+   - **Indexing Strategy**: Uses HNSW (Hierarchical Navigable Small World) indexing on `pgvector` to ensure similarity checking remains performant and cost-effective at scale.
 - **Styling**: TailwindCSS v4 + Shadcn/UI, utilizing Glassmorphism and custom WebGL Shaders.
 - **Security**: DOMPurify (XSS protection), bcryptjs (password hashing).
 

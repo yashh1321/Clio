@@ -1,0 +1,18 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3000",
+  "executionArgs": {
+    "projectName": "clio",
+    "projectPath": "c:\\mini project\\clio\\frontend",
+    "testIds": [],
+    "additionalInstruction": "Login credentials: teacher_test / teacher123 for teacher, student_test_new / student123 for student. The app uses username-based login (not email). The login form has fields labeled \"Username\" and \"Password\" with a \"Sign In\" button.",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-qIFAsXwt-7jTLFDboEXK55Xg-c04Uy6sKLg6GAVXDFUnJblw_ZWtqOD_d5e3ju_nCZI6T3DO_lCPDoMAi58o34ei9b6Ri0kYDuEBeb8tolKGwIw_gBDw8ibbDUwnegTkQ0c"
+    }
+  },
+  "serverPort": 59210,
+  "proxy": "http://cede3a1e-31f9-4c28-9790-5ee730ca6d9b:JBrTbHl68SOFVbZEYGQ6BucyCVT1yrdj@tun.testsprite.com:8080"
+}
