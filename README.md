@@ -7,7 +7,6 @@
 
   [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
   [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
-  [![FastAPI](https://img.shields.io/badge/FastAPI-Middleware-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](http://makeapullrequest.com)
@@ -70,33 +69,24 @@ Clio uses a secure, modern architecture with strict JWT-based Role-Based Access 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v20+)
-- Python (3.10+) 
+- Node.js (v22+)
 - Supabase Project (for PostgreSQL database)
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/clio.git
-   cd clio
+   git clone https://github.com/yashh1321/Clio.git
+   cd Clio
    ```
 
-2. **Install Frontend Dependencies**
+2. **Install Dependencies**
    ```bash
    cd frontend
    npm install
    ```
 
-3. **Install Backend Dependencies**
-   ```bash
-   cd ../backend
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-
-4. **Environment Variables**
+3. **Environment Variables**
    Create a `.env.local` file in the `frontend` directory and add your Supabase keys:
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
@@ -104,10 +94,13 @@ Clio uses a secure, modern architecture with strict JWT-based Role-Based Access 
    SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
    ```
 
-5. **Run the Application**
-   You can start both the frontend and backend concurrently using the provided batch script (Windows) or run them separately:
+4. **Run the Application**
    ```bash
-   # From the project root (Windows)
+   npm run dev
+   ```
+   Or use the provided batch script on Windows:
+   ```bash
+   # From the project root
    start-clio.bat
    ```
 
