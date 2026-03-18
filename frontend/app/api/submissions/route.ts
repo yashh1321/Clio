@@ -3,14 +3,8 @@ import { supabase } from "@/lib/supabase"
 import { verifyToken } from "@/lib/auth"
 import DOMPurify from 'isomorphic-dompurify'
 
-// Configure Next.js to allow large payloads (up to 20MB) for essay submissions with replay snapshots
-export const config = {
-    api: {
-        bodyParser: {
-            sizeLimit: '20mb',
-        },
-    },
-}
+// Removed invalid App Router config
+
 export const runtime = 'nodejs'
 
 // ── Rate Limiting (In-Memory) ──
