@@ -574,6 +574,17 @@ export default function RichEditor({
     },
   })
 
+  // Clear editor when content prop is reset to empty (e.g. after submission)
+  useEffect(() => {
+    if (!editor) return
+    if (content === '' || content === null || content === undefined) {
+      // Only clear if editor actually has content to avoid unnecessary updates
+      if (editor.getText().trim().length > 0) {
+        editor.commands.clearContent()
+      }
+    }
+  }, [content, editor])
+
   useEffect(() => {
     if (!editor) return
     const win = typeof window !== 'undefined' ? (window as Window & {
