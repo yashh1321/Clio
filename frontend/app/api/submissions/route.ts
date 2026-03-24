@@ -60,12 +60,10 @@ export async function GET(req: NextRequest) {
         .select(`
       id,
       assignment_title,
-      content,
       wpm,
       paste_count,
       integrity_score,
       submitted_at,
-      replay_snapshots,
       teacher_id,
       student:profiles!submissions_student_id_fkey ( id, username ),
       grade:grades ( id, score, feedback, graded_at )
@@ -85,12 +83,10 @@ export async function GET(req: NextRequest) {
             id: s.id,
             student_id: student?.username ?? "unknown",
             assignment_title: s.assignment_title,
-            content: s.content,
             wpm: s.wpm,
             paste_count: s.paste_count,
             integrity_score: s.integrity_score,
             timestamp: s.submitted_at,
-            replay_snapshots: s.replay_snapshots ?? [],
             grade: grade ?? null,
         }
     })

@@ -95,6 +95,33 @@ export default function DashboardPage() {
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
     const [groupsInitialized, setGroupsInitialized] = useState(false)
 
+    // ── Pre-fill grade form when selection changes ──
+    const [loadingDetails, setLoadingDetails] = useState(false)
+
+    const handleSelect = async (sub: Submission) => {
+        // If we already fetched the heavy data, just show it
+        if (sub.content !== undefined && sub.replay_snapshots !== undefined) {
+            setSelected(sub)
+            return
+        }
+
+        setLoadingDetails(true)
+        setSelected(sub) // show partial immediately
+        try {
+            const res = await fetch(`/api/submissions/${sub.id}`)
+            if (res.ok) {
+                const details = await res.json()
+                const completeSub = { ...sub, ...details }
+                setSubmissions(prev => prev.map(s => s.id === sub.id ? completeSub : s))
+                setSelected(completeSub)
+            }
+        } catch {
+            // keep partial on error
+        } finally {
+            setLoadingDetails(false)
+        }
+    }
+
     // ── Grading state ──
     const [gradeScore, setGradeScore] = useState("")
     const [gradeFeedback, setGradeFeedback] = useState("")
@@ -524,7 +551,7 @@ export default function DashboardPage() {
                                                         const Icon = badge.icon
                                                         const isActive = selected?.id === sub.id
                                                         return (
-                                                            <button key={sub.id} onClick={() => setSelected(sub)}
+                                                            <button key={sub.id} onClick={() => handleSelect(sub)}
                                                                 className={`w-full text-left rounded-lg border p-3 transition-all duration-200 group ${isActive ? "border-blue-500/40 bg-blue-500/10" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/15"}`}>
                                                                 <div className="flex items-center justify-between gap-2">
                                                                     <div className="flex items-center gap-2 min-w-0">
@@ -566,7 +593,13 @@ export default function DashboardPage() {
                 </div>
 
                 {/* ── Right: Detail Panel ── */}
-                <div className="flex-1 overflow-hidden flex flex-col bg-black/20 backdrop-blur-md border-l border-white/10 min-h-0">
+                <div className="flex-1 overflow-hidden flex flex-col bg-black/20 backdrop-blur-md border-l border-white/10 min-h-0 relative">
+                    {loadingDetails && (
+                        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm gap-3 transition-all duration-300">
+                            <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+                            <p className="text-sm font-medium text-white/70 tracking-wide">Downloading submission data...</p>
+                        </div>
+                    )}
                     {selected ? (
                         <>
                             {/* Detail Header */}
