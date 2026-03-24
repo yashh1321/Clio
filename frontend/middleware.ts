@@ -52,7 +52,49 @@ const PUBLIC_ROUTES = [
     /^\/favicon/,
 ]
 
-export function middleware(req: NextRequest) {
+function base64UrlDecode(str: string) {
+    let base64 = str.replace(/-/g, "+").replace(/_/g, "/")
+    while (base64.length % 4) base64 += "="
+    const bin = atob(base64)
+    const bytes = new Uint8Array(bin.length)
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+    return bytes
+}
+
+async function verifyTokenSignature(token: string): Promise<string | null> {
+    const secretStr = process.env.AUTH_SECRET || (process.env.NODE_ENV !== "production" ? "clio-dev-secret-DO-NOT-USE-IN-PROD" : "")
+    if (!secretStr) return null
+
+    const parts = token.split(".")
+    if (parts.length !== 2) return null
+
+    const [dataB64, sigB64] = parts
+
+    try {
+        const encoder = new TextEncoder()
+        const key = await crypto.subtle.importKey(
+            "raw",
+            encoder.encode(secretStr),
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["verify"]
+        )
+
+        const signatureBytes = base64UrlDecode(sigB64)
+        const dataBytes = encoder.encode(dataB64)
+
+        const isValid = await crypto.subtle.verify("HMAC", key, signatureBytes, dataBytes)
+        if (!isValid) return null
+
+        const payloadJson = new TextDecoder().decode(base64UrlDecode(dataB64))
+        const payload = JSON.parse(payloadJson)
+        return payload.role
+    } catch {
+        return null
+    }
+}
+
+export async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl
 
     // Skip public routes
@@ -63,17 +105,10 @@ export function middleware(req: NextRequest) {
     // Get session token
     const token = req.cookies.get("clio_session")?.value
 
-    // Decode JWT payload (without verifying signature) to check roles
+    // Properly verify JWT signature using Web Crypto API
     let userRole: string | null = null
     if (token) {
-        try {
-            const payloadBase64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
-            const payloadJson = decodeURIComponent(atob(payloadBase64).split('').map(function (c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            const payload = JSON.parse(payloadJson)
-            userRole = payload.role
-        } catch { /* silent */ }
+        userRole = await verifyTokenSignature(token)
     }
 
     // Check protected API routes
