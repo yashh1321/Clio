@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['puppeteer', 'mammoth'],
+  serverExternalPackages: ['puppeteer', 'mammoth', 'isomorphic-dompurify', 'jsdom'],
   async headers() {
     return [
       {
