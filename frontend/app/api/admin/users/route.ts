@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createSupabaseAdmin } from "@/lib/supabase"
 import bcrypt from "bcryptjs"
 import { verifyToken } from "@/lib/auth"
-import DOMPurify from "isomorphic-dompurify"
+import sanitizeHtml from "sanitize-html"
 
 const ALLOWED_ROLES = ["student", "teacher", "admin"]
 
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
         if (existingEmail) return NextResponse.json({ error: "Email taken" }, { status: 409 })
 
         const hashedPassword = await bcrypt.hash(password, 10)
-        const safeName = DOMPurify.sanitize((full_name || "").trim(), { ALLOWED_TAGS: [] })
+        const safeName = sanitizeHtml((full_name || "").trim(), { allowedTags: [], allowedAttributes: {} })
 
         const insertData: Record<string, string> = {
             username: safeUsername,
@@ -77,8 +77,8 @@ export async function POST(req: NextRequest) {
         }
 
         if (role === "student") {
-            insertData.class = DOMPurify.sanitize((student_class || "").trim(), { ALLOWED_TAGS: [] })
-            insertData.course = DOMPurify.sanitize((course || "").trim(), { ALLOWED_TAGS: [] })
+            insertData.class = sanitizeHtml((student_class || "").trim(), { allowedTags: [], allowedAttributes: {} })
+            insertData.course = sanitizeHtml((course || "").trim(), { allowedTags: [], allowedAttributes: {} })
         }
 
         const { data, error } = await supabaseAdmin.from("profiles")
@@ -111,7 +111,7 @@ export async function PUT(req: NextRequest) {
             }
             updateData.role = role
         }
-        if (full_name) updateData.full_name = DOMPurify.sanitize(full_name.trim(), { ALLOWED_TAGS: [] })
+        if (full_name) updateData.full_name = sanitizeHtml(full_name.trim(), { allowedTags: [], allowedAttributes: {} })
         if (email) updateData.email = email.toLowerCase().trim()
         if (password) {
             updateData.password = await bcrypt.hash(password, 10)

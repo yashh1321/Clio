@@ -32,6 +32,7 @@
     "puppeteer": "^23.11.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "sanitize-html": "^2.17.2",
     "tailwind-merge": "^3.4.0",
     "three": "^0.181.2"
   },
@@ -43,6 +44,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/sanitize-html": "^2.16.1",
     "@types/three": "^0.164.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",

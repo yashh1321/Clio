@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 import { verifyToken } from "@/lib/auth"
-import DOMPurify from "isomorphic-dompurify"
+import sanitizeHtml from "sanitize-html"
 
 // ── GET /api/profile — returns the current user's profile ──
 export async function GET(req: NextRequest) {
@@ -60,7 +60,7 @@ export async function PUT(req: NextRequest) {
 
         // Sanitize all inputs
         const sanitize = (val: string | undefined, maxLen: number) =>
-            DOMPurify.sanitize((val || "").trim().slice(0, maxLen), { ALLOWED_TAGS: [] })
+            sanitizeHtml((val || "").trim().slice(0, maxLen), { allowedTags: [], allowedAttributes: {} })
 
         const updateData: Record<string, string> = {}
 

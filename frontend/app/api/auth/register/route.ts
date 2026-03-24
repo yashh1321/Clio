@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 import bcrypt from "bcryptjs"
-import DOMPurify from "isomorphic-dompurify"
+import sanitizeHtml from "sanitize-html"
 
 // ── POST /api/auth/register — Create a new student or teacher account ──
 export async function POST(req: NextRequest) {
@@ -78,9 +78,9 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Sanitize inputs ──
-        const safeName = DOMPurify.sanitize((full_name || "").trim().slice(0, 200), { ALLOWED_TAGS: [] })
-        const safeCourse = DOMPurify.sanitize((course || "").trim().slice(0, 200), { ALLOWED_TAGS: [] })
-        const safeClass = DOMPurify.sanitize((student_class || "").trim().slice(0, 100), { ALLOWED_TAGS: [] })
+        const safeName = sanitizeHtml((full_name || "").trim().slice(0, 200), { allowedTags: [], allowedAttributes: {} })
+        const safeCourse = sanitizeHtml((course || "").trim().slice(0, 200), { allowedTags: [], allowedAttributes: {} })
+        const safeClass = sanitizeHtml((student_class || "").trim().slice(0, 100), { allowedTags: [], allowedAttributes: {} })
 
         // ── Hash password ──
         const hashedPassword = await bcrypt.hash(password, 10)

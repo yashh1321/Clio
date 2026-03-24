@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 import { verifyToken } from "@/lib/auth"
-import DOMPurify from "isomorphic-dompurify"
+import sanitizeHtml from "sanitize-html"
 
 // ── GET /api/assignments — list assignments ──
 // Teachers: see their own assignments
@@ -84,8 +84,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Title is required" }, { status: 400 })
         }
 
-        const safeTitle = DOMPurify.sanitize(title.trim().slice(0, 500), { ALLOWED_TAGS: [] })
-        const safeDesc = DOMPurify.sanitize((description || "").trim().slice(0, 10000), { USE_PROFILES: { html: true } })
+        const safeTitle = sanitizeHtml(title.trim().slice(0, 500), { allowedTags: [], allowedAttributes: {} })
+        const safeDesc = sanitizeHtml((description || "").trim().slice(0, 10000))
 
         // Lookup teacher profile
         const { data: profile, error: profileErr } = await supabase
@@ -165,8 +165,8 @@ export async function PUT(req: NextRequest) {
         if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 })
 
         const updateData: Record<string, unknown> = {}
-        if (title !== undefined) updateData.title = DOMPurify.sanitize(title.trim().slice(0, 500), { ALLOWED_TAGS: [] })
-        if (description !== undefined) updateData.description = DOMPurify.sanitize(description.trim().slice(0, 10000), { USE_PROFILES: { html: true } })
+        if (title !== undefined) updateData.title = sanitizeHtml(title.trim().slice(0, 500), { allowedTags: [], allowedAttributes: {} })
+        if (description !== undefined) updateData.description = sanitizeHtml(description.trim().slice(0, 10000))
         if (due_date !== undefined) {
             if (due_date) {
                 const d = new Date(due_date)

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 import { verifyToken } from "@/lib/auth"
-import DOMPurify from "isomorphic-dompurify"
+import sanitizeHtml from "sanitize-html"
 
 // ── GET /api/classes — List classes ──
 // Teachers: see their classes with enrollment counts
@@ -108,9 +108,9 @@ export async function POST(req: NextRequest) {
             .from("classes")
             .insert({
                 teacher_id: profile.id,
-                name: DOMPurify.sanitize(name.trim().slice(0, 200), { ALLOWED_TAGS: [] }),
-                section: DOMPurify.sanitize((section || "").trim().slice(0, 100), { ALLOWED_TAGS: [] }),
-                description: DOMPurify.sanitize((description || "").trim().slice(0, 2000), { ALLOWED_TAGS: [] }),
+                name: sanitizeHtml(name.trim().slice(0, 200), { allowedTags: [], allowedAttributes: {} }),
+                section: sanitizeHtml((section || "").trim().slice(0, 100), { allowedTags: [], allowedAttributes: {} }),
+                description: sanitizeHtml((description || "").trim().slice(0, 2000), { allowedTags: [], allowedAttributes: {} }),
             })
             .select("id, name, section, description, created_at")
             .single()

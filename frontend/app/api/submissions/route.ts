@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 import { verifyToken } from "@/lib/auth"
-import DOMPurify from 'isomorphic-dompurify'
+import sanitizeHtml from "sanitize-html"
 
 // Removed invalid App Router config
 
@@ -133,12 +133,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Essay content is too long (max 20,000,000 characters)" }, { status: 400 })
         }
 
-        const safeTitle = DOMPurify.sanitize((assignment_title || "Untitled").slice(0, 500), { USE_PROFILES: { html: true } })
+        const safeTitle = sanitizeHtml((assignment_title || "Untitled").slice(0, 500))
         // Deep-Sanitize nested historical snapshsot HTML arrays
         let safeSnapshots = (replay_snapshots ?? []).slice(0, 50000) // Increase limits to allow extremely long historical sessions
-        safeSnapshots = safeSnapshots.map(snap => ({
+        safeSnapshots = safeSnapshots.map((snap: any) => ({
             ...snap,
-            html: DOMPurify.sanitize((snap.html || "").trim(), { USE_PROFILES: { html: true } })
+            html: sanitizeHtml((snap.html || "").trim())
         }))
 
         // Gracefully handle strings/invalid types to prevent postgres integer casting crashes (DoS)
@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
 
         // Sanitize the HTML on the server before passing to Database (prevents XSS permanently)
         // Disabling SVG tags using html default profile prevents dangerous custom SVG attacks entirely.
-        const sanitizedContent = DOMPurify.sanitize(content.trim(), { USE_PROFILES: { html: true } })
+        const sanitizedContent = sanitizeHtml(content.trim())
 
         // Insert the submission
         const insertData: Record<string, unknown> = {
