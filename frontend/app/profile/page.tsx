@@ -13,7 +13,6 @@ import {
     CheckCircle,
     XCircle,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { WebGLShader } from "@/components/ui/web-gl-shader"
 
 interface ProfileData {

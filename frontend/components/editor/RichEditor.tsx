@@ -487,7 +487,6 @@ export default function RichEditor({
   const lastTextLengthRef = useRef(0)
   const lastUpdateAtRef = useRef<number | null>(null)
   const lastSnapshotAtRef = useRef<number>(0)
-  const lastPasteAtRef = useRef<number | null>(null)
   const editor = useEditor({
     extensions: [
       StarterKit,

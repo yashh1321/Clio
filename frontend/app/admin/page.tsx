@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Plus, MoreVertical, Trash2, Edit2, Shield, User, GraduationCap, Building2, FileText, FileCheck } from "lucide-react"
+import { Plus, Trash2, Edit2, Shield, User, GraduationCap, Building2, FileText, FileCheck } from "lucide-react"
 
 interface UserProfile {
     id: string
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
         course: ""
     })
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         try {
             const res = await fetch("/api/admin/users")
             if (!res.ok) {
@@ -67,14 +67,14 @@ export default function AdminDashboard() {
             }
             const data = await res.json()
             setUsers(data.users)
-        } catch (err: any) {
-            setError(err.message)
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Unknown error")
         } finally {
             setLoading(false)
         }
-    }
+    }, [router])
 
-    const fetchAssignments = async () => {
+    const fetchAssignments = useCallback(async () => {
         try {
             setLoading(true)
             const res = await fetch("/api/admin/assignments")
@@ -87,14 +87,14 @@ export default function AdminDashboard() {
             }
             const data = await res.json()
             setAssignments(data.assignments)
-        } catch (err: any) {
-            setError(err.message)
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Unknown error")
         } finally {
             setLoading(false)
         }
-    }
+    }, [router])
 
-    const fetchSubmissions = async () => {
+    const fetchSubmissions = useCallback(async () => {
         try {
             setLoading(true)
             const res = await fetch("/api/admin/submissions")
@@ -107,18 +107,18 @@ export default function AdminDashboard() {
             }
             const data = await res.json()
             setSubmissions(data.submissions)
-        } catch (err: any) {
-            setError(err.message)
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Unknown error")
         } finally {
             setLoading(false)
         }
-    }
+    }, [router])
 
     useEffect(() => {
         if (activeTab === "users") fetchUsers()
         else if (activeTab === "assignments") fetchAssignments()
         else if (activeTab === "submissions") fetchSubmissions()
-    }, [activeTab, router])
+    }, [activeTab, fetchUsers, fetchAssignments, fetchSubmissions])
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -139,12 +139,12 @@ export default function AdminDashboard() {
                 }
             }
 
-            const data = await res.json()
+            await res.json()
             setIsCreateOpen(false)
             setFormData({ username: "", password: "", email: "", full_name: "", role: "student", student_class: "", course: "" })
             fetchUsers()
-        } catch (err: any) {
-            alert(err.message)
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : "Unknown error")
         }
     }
 
@@ -152,7 +152,7 @@ export default function AdminDashboard() {
         e.preventDefault()
         if (!selectedUser) return
         try {
-            const payload: any = { id: selectedUser.id, role: formData.role, full_name: formData.full_name, email: formData.email }
+            const payload: Record<string, string> = { id: selectedUser.id, role: formData.role, full_name: formData.full_name, email: formData.email }
             if (formData.password) payload.password = formData.password
 
             const res = await fetch("/api/admin/users", {
@@ -171,11 +171,11 @@ export default function AdminDashboard() {
                 }
             }
 
-            const data = await res.json()
+            await res.json()
             setIsEditOpen(false)
             fetchUsers()
-        } catch (err: any) {
-            alert(err.message)
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : "Unknown error")
         }
     }
 
@@ -197,8 +197,8 @@ export default function AdminDashboard() {
 
             await res.json()
             fetchUsers()
-        } catch (err: any) {
-            alert(err.message)
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : "Unknown error")
         }
     }
 
@@ -216,7 +216,7 @@ export default function AdminDashboard() {
                 }
             }
             fetchAssignments()
-        } catch (err: any) { alert(err.message) }
+        } catch (err: unknown) { alert(err instanceof Error ? err.message : "Unknown error") }
     }
 
     const handleDeleteSubmission = async (id: string, title: string, student: string) => {
@@ -233,7 +233,7 @@ export default function AdminDashboard() {
                 }
             }
             fetchSubmissions()
-        } catch (err: any) { alert(err.message) }
+        } catch (err: unknown) { alert(err instanceof Error ? err.message : "Unknown error") }
     }
 
     const openEditModal = (user: UserProfile) => {

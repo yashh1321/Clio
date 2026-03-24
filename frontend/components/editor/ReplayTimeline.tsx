@@ -147,7 +147,9 @@ export default function ReplayTimeline({ snapshots, onClose }: ReplayTimelinePro
                         dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                     />
                 ) : (
-                    <p className="text-white/30 text-sm">Empty</p>
+                    <div className="flex items-center justify-center h-full">
+                        <p className="text-white/30 text-sm italic">Typing snippet unavailable or truncated</p>
+                    </div>
                 )}
             </div>
 

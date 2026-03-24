@@ -77,10 +77,5 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ error: "Submission not found" }, { status: 404 })
     }
 
-    if (error) {
-        console.error("Error deleting submission:", error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
     return NextResponse.json({ success: true, message: "Submission deleted successfully" })
 }

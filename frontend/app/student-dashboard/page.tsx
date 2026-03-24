@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
-    Loader2, FileText, CheckCircle, Clock, AlertTriangle, BookOpen,
+    Loader2, FileText, CheckCircle, Clock, BookOpen,
     Bell, ChevronRight, BarChart3, PenTool, GraduationCap, Star, Flame
 } from "lucide-react"
 import { Button } from "@/components/ui/button"

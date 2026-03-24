@@ -151,8 +151,15 @@ export async function POST(req: NextRequest) {
         if (isNaN(parsedWpm)) parsedWpm = 0
         if (isNaN(parsedPaste)) parsedPaste = 0
 
-        const safeWpm = Math.max(0, Math.min(parsedWpm, 300))
-        const safePaste = Math.max(0, parsedPaste)
+        if (parsedWpm < 0) {
+            return NextResponse.json({ error: "WPM cannot be negative" }, { status: 400 })
+        }
+        if (parsedPaste < 0) {
+            return NextResponse.json({ error: "Paste count cannot be negative" }, { status: 400 })
+        }
+
+        const safeWpm = Math.min(parsedWpm, 300)
+        const safePaste = parsedPaste
 
         // Calculate integrity score (same logic as the Python backend)
         let score = 100

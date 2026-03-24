@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
         const hashedPassword = await bcrypt.hash(password, 10)
         const safeName = DOMPurify.sanitize((full_name || "").trim(), { ALLOWED_TAGS: [] })
 
-        const insertData: any = {
+        const insertData: Record<string, string> = {
             username: safeUsername,
             email: safeEmail,
             role,
@@ -88,8 +88,8 @@ export async function POST(req: NextRequest) {
         if (error) throw error
 
         return NextResponse.json({ user: data })
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message || "Failed to create user" }, { status: 500 })
+    } catch (err: unknown) {
+        return NextResponse.json({ error: err instanceof Error ? err.message : "Failed to create user" }, { status: 500 })
     }
 }
 
@@ -104,7 +104,7 @@ export async function PUT(req: NextRequest) {
 
         if (!id) return NextResponse.json({ error: "User ID required" }, { status: 400 })
 
-        const updateData: any = {}
+        const updateData: Record<string, string> = {}
         if (role) {
             if (!ALLOWED_ROLES.includes(role)) {
                 return NextResponse.json({ error: "Invalid role specified" }, { status: 400 })
@@ -131,8 +131,8 @@ export async function PUT(req: NextRequest) {
         if (error) throw error
 
         return NextResponse.json({ user: data })
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message || "Update failed" }, { status: 500 })
+    } catch (err: unknown) {
+        return NextResponse.json({ error: err instanceof Error ? err.message : "Update failed" }, { status: 500 })
     }
 }
 
@@ -159,7 +159,7 @@ export async function DELETE(req: NextRequest) {
         if (error) throw error
 
         return NextResponse.json({ success: true })
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message || "Delete failed. Check constraint logs." }, { status: 500 })
+    } catch (err: unknown) {
+        return NextResponse.json({ error: err instanceof Error ? err.message : "Delete failed. Check constraint logs." }, { status: 500 })
     }
 }

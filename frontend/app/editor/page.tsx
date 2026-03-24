@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 
 import { Modal } from "../../components/ui/modal"
@@ -27,7 +27,7 @@ export default function EditorPage() {
   const [status, setStatus] = useState<"verified" | "warning" | "suspicious">("verified")
   const [title, setTitle] = useState("Philosophy 101")
   const [subtitle, setSubtitle] = useState("Mid-Term Essay")
-  const [subtitleEnabled, setSubtitleEnabled] = useState(true)
+  const [subtitleEnabled, _setSubtitleEnabled] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
   const [selectedTeacher, setSelectedTeacher] = useState("")
   const [teachers, setTeachers] = useState<{ id: string; username: string }[]>([])
@@ -732,9 +732,9 @@ export default function EditorPage() {
         : (typeof content === 'string' ? content : '')
 
       // ── Thin out replay snapshots to prevent huge payloads ──
-      // Keep at most 200 evenly-spaced snapshots, truncate each HTML to 50KB
+      // Keep at most 200 evenly-spaced snapshots
       const MAX_SNAPSHOTS = 200
-      const MAX_HTML_LENGTH = 50_000
+      const MAX_HTML_LENGTH = 200_000 // Increased limit to prevent breaking HTML tags
       let trimmedSnapshots = replaySnapshots
       if (trimmedSnapshots.length > MAX_SNAPSHOTS) {
         const step = trimmedSnapshots.length / MAX_SNAPSHOTS
@@ -746,12 +746,16 @@ export default function EditorPage() {
         sampled[sampled.length - 1] = trimmedSnapshots[trimmedSnapshots.length - 1]
         trimmedSnapshots = sampled
       }
-      trimmedSnapshots = trimmedSnapshots.map(snap => ({
-        ...snap,
-        html: snap.html && snap.html.length > MAX_HTML_LENGTH
-          ? snap.html.slice(0, MAX_HTML_LENGTH)
-          : snap.html
-      }))
+      trimmedSnapshots = trimmedSnapshots.map(snap => {
+        // Replace large base64 images with placeholders so we don't bloat the payload
+        const cleanHtml = snap.html ? snap.html.replace(/src="data:image\/[^;]+;base64,[^"]+"/g, 'src="" class="placeholder-image"') : "";
+        return {
+          ...snap,
+          html: cleanHtml.length > MAX_HTML_LENGTH
+            ? cleanHtml.slice(0, MAX_HTML_LENGTH)
+            : cleanHtml
+        }
+      })
 
       const res = await fetch("/api/submissions", {
         method: "POST",
@@ -861,7 +865,7 @@ export default function EditorPage() {
 
   useEffect(() => {
     handlersRef.current = { handleSaveDraft, handleSubmit, handleExportPdf, handleExportDocx, isExporting, setFocusMode }
-  })
+  }, [handleSaveDraft, handleSubmit, handleExportPdf, handleExportDocx, isExporting, setFocusMode])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

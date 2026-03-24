@@ -92,7 +92,7 @@ export default function DraftsPage() {
             } else {
                 setError("Failed to delete draft")
             }
-        } catch (err) {
+        } catch {
             setError("Error deleting draft")
         }
     }

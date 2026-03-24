@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Test utility scripts (not app code):
+    "test_dompurify.js",
+    "test_submit.js",
   ]),
   {
     files: [
@@ -20,6 +23,7 @@ const eslintConfig = defineConfig([
     ],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", { "varsIgnorePattern": "^_" }],
     },
   },
 ]);
