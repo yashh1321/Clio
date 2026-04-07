@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { supabase } from "../../lib/supabase"
 
 import { Button } from "../../components/ui/button"
 import ReplayTimeline, { type ReplaySnapshot } from "../../components/editor/ReplayTimeline"
@@ -186,7 +187,7 @@ export default function DashboardPage() {
         try {
             setLoading(true)
             setError(null)
-            const res = await fetch("/api/submissions")
+            const res = await fetch("/api/submissions", { cache: "no-store", credentials: "include" })
             if (!res.ok) throw new Error(`Server responded ${res.status}`)
             const data: Submission[] = await res.json()
             setSubmissions(data)
@@ -198,7 +199,27 @@ export default function DashboardPage() {
     }, [])
 
     useEffect(() => {
-        if (sessionChecked) fetchSubmissions()
+        if (!sessionChecked) return
+
+        fetchSubmissions()
+
+        // ── Auto-Update / Realtime Submissions ──
+        const channel = supabase
+            .channel('dashboard-submissions')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'submissions' },
+                (payload) => {
+                    console.log('[Dashboard] New submission detected via realtime!', payload)
+                    // Re-fetch all to get populated relationships (student profile, grades, etc.)
+                    fetchSubmissions()
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
     }, [sessionChecked, fetchSubmissions])
 
     // ── SSR-safe DOMPurify ──
