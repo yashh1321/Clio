@@ -40,7 +40,10 @@ export async function GET(req: NextRequest) {
     const token = req.cookies.get("clio_session")?.value
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const session = verifyToken(token)
-    if (!session || session.role !== "teacher") {
+    
+    // Explicitly check role without whitespace/case issues
+    const role = session ? (session.role || "").trim().toLowerCase() : "";
+    if (!session || role !== "teacher") {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -101,7 +104,10 @@ export async function POST(req: NextRequest) {
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const session = verifyToken(token)
     if (!session) return NextResponse.json({ error: "Invalid session" }, { status: 401 })
-    if (session.role !== "student") {
+    
+    // Explicitly check role without whitespace/case issues
+    const role = (session.role || "").trim().toLowerCase();
+    if (role !== "student") {
         return NextResponse.json({ error: "Forbidden: only students can submit essays" }, { status: 403 })
     }
 
