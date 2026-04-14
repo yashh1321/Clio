@@ -36,6 +36,7 @@ Traditional editors (MS Word, Google Docs) focus solely on content creation, lea
 - **Cloud Autosave**: Drafts are safely synced to the cloud, preventing data loss.
 - **Optional Spotify Integration**: Connect an account to control playback and support focus without leaving the writing context.
 - **Easy Exports**: Download DOCX or PDF directly from the browser.
+- **Test Credentials**: Username- Student , Password - 123.
 
 ### 🍎 For Teachers (Confident Grading)
 - **Session Replay**: Periodic snapshots of the essay are taken, allowing teachers to play back the entire writing session like a video. Protects students from false AI accusations.
@@ -45,6 +46,7 @@ Traditional editors (MS Word, Google Docs) focus solely on content creation, lea
   - **Similarity Checking**: Compares student submissions against each other to identify collusion.
   - **Grading Panel**: Assign scores (0-100) and provide rich rubric feedback.
   - **Analytics**: View class-wide trends and integrity score distributions.
+  - **Test Credentials**: Username- Teacher , Password - 123.
 
 ---
 
